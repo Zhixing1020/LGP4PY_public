@@ -1,0 +1,39 @@
+ embed the multi breeding pipeline into Evolution framework directly.
+
+the base parameter in "breeder.py" should be "pop.subpop.0.species.pipe". To see change the "pipe" or not
+
+for each individual   add a variable recording the pipeline that produces it
+
+LGPIndividual4SR  is a merge of LGPIndividual4SR & LGPIndividual4SRMT
+
+I get rid of the tree constraint, and replace its role by GPSpecies
+
+
+******** question *********
+what is GPinitializer  for?
+
+******** change *******
+GPNodeGatherer   -->  only for a memory address to store GPNode in a function
+
+cloneReplacing()  --> change to clone()
+
+********   disgard *********
+
+GPNodeconstraint    -->   node constraints are fulfilled by checking the number of children
+
+
+no Exchanger
+
+no hash code
+
+
+********  test  ********
+1. randomly produce individuals （ok）
+2. clone a tree and vary it. check the new and original one
+3. check the toString() methods of GPNode and GPTree (ok)
+4. number of nodes and collect a node based on specific types
+5. node equivalent and tree equivalent
+
+6. breeding pipeline  properly set up
+7. the returning   tuple[int, list[GPIndividual]]   can it work well.  each individual has its own address,  the crossover and mutation have different returning number,  it does not overwrite the elite individuals, 
+
