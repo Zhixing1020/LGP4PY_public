@@ -6,6 +6,8 @@ from .lgp_node_selector import LGPNodeSelector
 from .reproduction import ReproductionPipeline
 from .swap import LGPSwapPipeline
 from .tournament_selection import TournamentSelection
+from .neutral_mutation import LGPNeutralMutationPipeline
+from .anealingTournamentSelection import AnealingTournamentSelection
 
 
 __all__ = [
@@ -16,5 +18,7 @@ __all__ = [
     "LGP2PointCrossoverPipeline",
     "LGPMacroMutationPipeline",
     "LGPMicroMutationPipeline",
-    "LGPSwapPipeline"
+    "LGPSwapPipeline",
+    "LGPNeutralMutationPipeline",
+    "AnealingTournamentSelection"
 ]

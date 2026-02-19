@@ -1,0 +1,357 @@
+#print-unaccessed-params = true
+#print-used-params = true
+
+#basic LGP
+
+# ==============================
+# Administrative parameters
+# ==============================
+evalthreads = 1
+breedthreads = 1
+jobs = 1
+seed.0 = 4
+# checkpoint = false
+# checkpoint-modulo = 1
+# checkpoint-prefix = ec
+
+# ==============================
+# Basic evolution parameters
+# ==============================
+state = src.lgp.algorithm.LandscapeOptimization.evolution_state_FLO.EvolutionStateFLO
+finish = ec.simple.SimpleFinisher
+exch = ec.simple.SimpleExchanger
+breed =	src.ec.Breeder
+eval = src.ec.Evaluator
+stat = src.ec.SimpleStatistics
+stat.file =$out.stat
+stat.silent.file = false
+stat.num-children = 1
+stat.child.0 = src.lgp.statistics.lgp_short_statistics.LGPStatistics
+stat.child.0.file = $outtabular.stat
+stat.child.0.silent.file = false
+stat.child.0.modulus = 1
+
+generations = 200
+quit-on-run-complete = true
+
+pop = ec.Population
+pop.subpops = 1
+pop.subpop.0 = src.lgp.algorithm.LandscapeOptimization.subpopulationFLO.SubpopulationFLO
+pop.subpop.0.size =	256
+
+pop.subpop.0.updateinterval = 5
+pop.subpop.0.indexlist = src.lgp.algorithm.LandscapeOptimization.FLReductionLGP.indexing.indexList4LGP_FLR.IndexList4LGP_FLR
+pop.subpop.0.indexlist.maxListSize = 500
+pop.subpop.0.indexlist.random_update_rate = 0.1
+pop.subpop.0.indexlist.nodeSelector = src.lgp.individual.reproduce.LGPNodeSelector
+pop.subpop.0.indexlist.builder = src.ec.GPBuilder
+#pop.subpop.0.indexlist.builder.min-depth = 3
+#pop.subpop.0.indexlist.builder.max-depth = 3
+#pop.subpop.0.indexlist.builder.prob_constant = 0.75
+pop.subpop.0.indexlist.builder.maxnumsymbols = 50000
+pop.subpop.0.indexlist.itemprototype = src.lgp.algorithm.LandscapeOptimization.simpleLGP.indexing.index4LGP.Index4LGP
+pop.subpop.0.indexlist.itemprototype.symbol_prototype = src.lgp.individual.GPTreeStruct
+pop.subpop.0.indexlist.itemprototype.symbol_prototype.species = src.lgp.species.LGPSpecies
+pop.subpop.0.indexlist.itemprototype.symbol_prototype.species.fset = f0
+pop.subpop.0.indexlist.itemprototype.symbol_prototype.tc = tc0
+index.num_inputs = 100
+index.dim_inputs = 2
+pop.subpop.0.indexlist.numiterations = 10
+pop.subpop.0.indexlist.step = 0.01
+pop.subpop.0.indexlist.minstep = 1
+pop.subpop.0.indexlist.num_objectives = 2
+pop.subpop.0.indexlist.objectives.0 = src.lgp.algorithm.LandscapeOptimization.objectives.distance.Distance
+pop.subpop.0.indexlist.objectives.0.boardsize = 5
+
+pop.subpop.0.indexlist.objectives.1 = src.lgp.algorithm.LandscapeOptimization.objectives.L2NORM.L2NORM
+pop.subpop.0.indexlist.objectives.1.boardsize = 5
+pop.subpop.0.indexlist.objectives.1.coef = 1.0
+
+pop.subpop.0.board = src.lgp.algorithm.LandscapeOptimization.indexing.board.Board
+pop.subpop.0.board.maxsize = 10
+pop.subpop.0.board.anchor_rate = 0.2
+
+
+breed.elite.0 = 3
+
+
+# ==============================
+# GP general parameters
+# ==============================
+
+# GP population parameters
+pop.subpop.0.species = src.lgp.species.LGPSpecies
+pop.subpop.0.species.fset = f0
+pop.subpop.0.species.ind = tasks.symbreg.individual.LGPIndividual4SR
+pop.subpop.0.species.ind.maxnumtrees = 50
+pop.subpop.0.species.ind.minnumtrees = 1
+pop.subpop.0.species.ind.init_maxnumtrees = 10
+pop.subpop.0.species.ind.init_minnumtrees = 5
+#also remember to update the number of register in the function set
+pop.subpop.0.species.ind.numregisters = 8
+pop.subpop.0.species.ind.rate_flowoperator = 0.2
+pop.subpop.0.species.ind.max_itertimes = 100
+pop.subpop.0.species.ind.effective_initial = true
+pop.subpop.0.species.ind.tree.0 = src.lgp.individual.GPTreeStruct
+pop.subpop.0.species.ind.tree.0.tc = tc0
+pop.subpop.0.species.ind.num-output-register = 1
+pop.subpop.0.species.ind.output-register.0 = 0
+
+pop.subpop.0.species.ind.to-wrap = false
+pop.subpop.0.species.ind.batch-size=2500
+
+
+pop.subpop.0.species.fitness = src.ec.Fitness
+pop.subpop.0.species.fitness.num-objectives = 1
+pop.subpop.0.species.fitness.maximize = false
+pop.subpop.0.duplicate-retries = 100
+
+# GP initializer
+init = ec.gp.GPInitializer
+
+# GP breeding pipeline
+pop.subpop.0.species.pipe = src.lgp.individual.reproduce.MultiBreedingPipeline
+pop.subpop.0.species.pipe.generate-max = false
+pop.subpop.0.species.pipe.num-sources = 6
+pop.subpop.0.species.pipe.source.0 = src.lgp.individual.reproduce.LGPMicroMutationPipeline
+pop.subpop.0.species.pipe.source.0.prob = 0.0
+pop.subpop.0.species.pipe.source.1 = src.lgp.individual.reproduce.LGPMacroMutationPipeline
+pop.subpop.0.species.pipe.source.1.micro_base = pop.subpop.0.species.pipe.source.5
+#pop.subpop.0.species.pipe.source.1.micro_base = null
+pop.subpop.0.species.pipe.source.1.prob = 0.2
+
+pop.subpop.0.species.pipe.source.2 = src.lgp.individual.reproduce.LGP2PointCrossoverPipeline
+pop.subpop.0.species.pipe.source.2.micro_base = pop.subpop.0.species.pipe.source.5
+#pop.subpop.0.species.pipe.source.2.micro_base = null
+pop.subpop.0.species.pipe.source.2.prob = 0.2
+
+pop.subpop.0.species.pipe.source.3 = src.lgp.individual.reproduce.ReproductionPipeline
+pop.subpop.0.species.pipe.source.3.prob = 0.0
+
+pop.subpop.0.species.pipe.source.4 = src.lgp.algorithm.LandscapeOptimization.FLReductionLGP.individual.reproduce.neighborhoodSearchFast.NeighborhoodSearchFast
+pop.subpop.0.species.pipe.source.4.prob = 0.4
+pop.subpop.0.species.pipe.source.4.source.0 = src.lgp.individual.reproduce.TournamentSelection
+pop.subpop.0.species.pipe.source.4.source.1 = src.lgp.individual.reproduce.TournamentSelection
+pop.subpop.0.species.pipe.source.4.mask_length = 3
+pop.subpop.0.species.pipe.source.4.macro_size = 1
+pop.subpop.0.species.pipe.source.4.maxstep = 0.1
+pop.subpop.0.species.pipe.source.4.prob_insert = 0.65
+pop.subpop.0.species.pipe.source.4.prob_delete = 0.35
+pop.subpop.0.species.pipe.source.4.tries = 50
+
+pop.subpop.0.species.pipe.source.5 = src.lgp.individual.reproduce.LGPSwapPipeline
+pop.subpop.0.species.pipe.source.5.micro_base = pop.subpop.0.species.pipe.source.0
+#pop.subpop.0.species.pipe.source.5.micro_base = null
+pop.subpop.0.species.pipe.source.5.prob = 0.1
+
+
+# Selection for reproduction
+breed.reproduce.source.0 = src.lgp.individual.reproduce.TournamentSelection
+#breed.reproduce.source.0 = src.lgp.individual.reproduce.AnealingTournamentSelection
+#breed.reproduce.re-evaluate = true
+
+# Koza crossover parameters
+xover.source.0 = src.lgp.individual.reproduce.TournamentSelection
+xover.source.1 = same
+xover.ns.0 = src.lgp.individual.reproduce.LGPNodeSelector
+xover.ns.1 = same
+xover.maxdepth = 3
+xover.tries = 10
+
+#LGP 2-point crossover parameters
+lgp.2pcross.maxseglength = 30
+lgp.2pcross.maxlendiffseg = 10
+lgp.2pcross.maxdistancecrosspoint = 30
+lgp.2pcross.effective = false
+
+
+# Koza mutation parameters
+mutate.source.0 = src.lgp.individual.reproduce.TournamentSelection
+mutate.ns.0 = src.lgp.individual.reproduce.LGPNodeSelector
+mutate.build.0 = src.ec.GPBuilder
+mutate.maxdepth = 3
+mutate.tries = 10
+
+
+lgp.micromut.step = 1
+lgp.micromut.effective = true
+lgp.micromut.probfunc = 0.25
+lgp.micromut.probcons = 0.25
+lgp.micromut.probwritereg = 0.25
+lgp.micromut.probreadreg = 0.25
+lgp.micromut.conststep = 10
+
+lgp.swap.step = 1
+lgp.swap.effective = true
+
+#LGP macro mutation parameters
+#effmut
+lgp.macromut.type = effmut
+lgp.macromut.step = 1
+lgp.macromut.prob_insert = 0.67
+lgp.macromut.prob_delete = 0.33
+
+# Tournament selection, for reproduction, crossover and mutation
+select.tournament.size = 7
+
+# Koza grow parameters, for mutation, since LGPMutationGrowBuilder extends from HalfBuilder, these parameters are unnecessary
+# gp.koza.grow.min-depth = 3
+#the same as the maximum depth of instructions
+# gp.koza.grow.max-depth = 4
+# gp.koza.grow.prob_constant = 0.75
+
+# LGP node selector, for crossover and mutation
+lgp.ns.nonterminals = 0.25
+lgp.ns.root = 0.25
+lgp.ns.constants = 0.25
+lgp.ns.read_registers = 0.25
+
+# GP atomic (a) and set (s) type parameters
+gp.type.a.size = 1
+gp.type.a.0.name = nil
+gp.type.s.size = 0
+
+# GP tree constraints
+gp.tc.size = 1
+gp.tc.0 = ec.gp.GPTreeConstraints
+gp.tc.0.name = tc0
+gp.tc.0.fset = f0
+gp.tc.0.returns = nil
+gp.tc.0.init = src.ec.GPBuilder
+builder.min-depth=3
+builder.max-depth=3
+builder.growp=0.0
+builder.prob_constant=0.75
+
+# Koza half-ramp-and-ramp parameters, for gp.tc.0.init
+# gp.koza.half.min-depth = 3
+#the same as the maximum depth of instructions
+# gp.koza.half.max-depth = 4
+# gp.koza.half.growp = 0.0
+# gp.koza.half.prob_constant = 0.75
+
+# GP node constraints (nc[k] means the node takes k children), no other constraint
+gp.nc.size = 7
+
+gp.nc.0 = ec.gp.GPNodeConstraints
+gp.nc.0.name = nc0
+gp.nc.0.returns = nil
+gp.nc.0.size = 0
+
+gp.nc.1 = ec.gp.GPNodeConstraints
+gp.nc.1.name = nc1
+gp.nc.1.returns = nil
+gp.nc.1.size = 1
+gp.nc.1.child.0 = nil
+
+gp.nc.2 = ec.gp.GPNodeConstraints
+gp.nc.2.name = nc2
+gp.nc.2.returns = nil
+gp.nc.2.size = 2
+gp.nc.2.child.0 = nil
+gp.nc.2.child.1 = nil
+
+gp.nc.3 = ec.gp.GPNodeConstraints
+gp.nc.3.name = nc3
+gp.nc.3.returns = nil
+gp.nc.3.size = 3
+gp.nc.3.child.0 = nil
+gp.nc.3.child.1 = nil
+gp.nc.3.child.2 = nil
+
+gp.nc.4 = ec.gp.GPNodeConstraints
+gp.nc.4.name = nc4
+gp.nc.4.returns = nil
+gp.nc.4.size = 4
+gp.nc.4.child.0 = nil
+gp.nc.4.child.1 = nil
+gp.nc.4.child.2 = nil
+gp.nc.4.child.3 = nil
+
+gp.nc.5 = ec.gp.GPNodeConstraints
+gp.nc.5.name = nc5
+gp.nc.5.returns = nil
+gp.nc.5.size = 5
+gp.nc.5.child.0 = nil
+gp.nc.5.child.1 = nil
+gp.nc.5.child.2 = nil
+gp.nc.5.child.3 = nil
+gp.nc.5.child.4 = nil
+
+gp.nc.6 = ec.gp.GPNodeConstraints
+gp.nc.6.name = nc6
+gp.nc.6.returns = nil
+gp.nc.6.size = 6
+gp.nc.6.child.0 = nil
+gp.nc.6.child.1 = nil
+gp.nc.6.child.2 = nil
+gp.nc.6.child.3 = nil
+gp.nc.6.child.4 = nil
+gp.nc.6.child.5 = nil
+
+# GP ADF parameters
+gp.problem.stack = ec.gp.ADFStack
+gp.adf-stack.context = ec.gp.ADFContext
+
+# ==============================
+# GP problem specific parameters
+# ==============================
+
+# GP function set parameters
+gp.fs.size = 1
+gp.fs.0.name = f0
+gp.fs.0.size = 11
+gp.fs.0.func.0 = src.lgp.individual.primitive.InputFeatureGPNode
+gp.fs.0.func.0.size = 1
+gp.fs.0.func.0.nc = nc0
+
+gp.fs.0.func.1 = src.lgp.individual.primitive.Add
+gp.fs.0.func.1.nc = nc2
+gp.fs.0.func.2 = src.lgp.individual.primitive.Sub
+gp.fs.0.func.2.nc = nc2
+gp.fs.0.func.3 = src.lgp.individual.primitive.Mul
+gp.fs.0.func.3.nc = nc2
+gp.fs.0.func.4 = src.lgp.individual.primitive.Div
+gp.fs.0.func.4.nc = nc2
+gp.fs.0.func.5 = src.lgp.individual.primitive.WriteRegisterGPNode
+gp.fs.0.func.5.numregisters = 8
+gp.fs.0.func.5.nc = nc1
+#two ways to add ReadRegister 1:in JSS, add them into terminal set (JSS specific). 2: add them as functions.
+gp.fs.0.func.6 = src.lgp.individual.primitive.ReadRegisterGPNode
+gp.fs.0.func.6.numregisters = 8
+gp.fs.0.func.6.nc = nc0
+
+gp.fs.0.func.7 = src.lgp.individual.primitive.Sin
+gp.fs.0.func.7.nc = nc1
+gp.fs.0.func.8 = src.lgp.individual.primitive.Cos
+gp.fs.0.func.8.nc = nc1
+
+gp.fs.0.func.9 = src.lgp.individual.primitive.Sqrt
+gp.fs.0.func.9.nc = nc1
+gp.fs.0.func.10 = src.lgp.individual.primitive.Ln
+gp.fs.0.func.10.nc = nc1
+
+gp.fs.0.func.11 = src.lgp.individual.primitive.ConstantGPNode
+gp.fs.0.func.11.lowbound = 0.0
+gp.fs.0.func.11.upbound = 9.0
+gp.fs.0.func.11.step = 0.2
+gp.fs.0.func.11.nc = nc0
+
+
+# ==============================
+# The output format
+# ==============================
+#gp.tree.print-style = c
+#pop.subpop.0.species.ind.tree.0.c-operators = false
+#gp.tree.print-style = dot
+
+# ==============================
+# The problem
+# ==============================
+
+eval.problem= tasks.symbreg.optimization.gp_symbolic_regression.GPSymbolicRegression
+eval.problem.data=src.ec.GPData
+
+SymbolicRegression.location = D:\\data\\study\\LGP4PY\\LGP4PY\\tasks\\symbreg\\dataset\\
+eval.problem.dataname = Nguyen4
+eval.problem.fitness = RSE

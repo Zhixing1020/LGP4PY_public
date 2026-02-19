@@ -54,11 +54,11 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
                 "LGPCrossover Pipeline has an invalid maximum distance of crossover points (it must be >= 0).",
                 base.push(self.P_MAXDIS_CROSS_POINT), def_.push(self.P_MAXDIS_CROSS_POINT))
         
-        microbase = Parameter(state.parameters.getString(
-            base.push(self.P_MICROMUTBASE),
-            def_.push(self.P_MICROMUTBASE)))
+        microbase_str = state.parameters.getString(base.push(self.P_MICROMUTBASE), 
+                            def_.push(self.P_MICROMUTBASE))
+        microbase = Parameter(microbase_str) if microbase_str != None else None
         self.microMutation = None
-        if str(microbase) != "null":
+        if microbase != None and str(microbase) != "null":
             self.microMutation = state.parameters.getInstanceForParameter(
                 microbase, def_.push(self.P_MICROMUTBASE), MutationPipeline)
             self.microMutation.setup(state, microbase)
@@ -124,13 +124,13 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
             parent1 = self.parents[0]
             parent2 = self.parents[1]
             
-            nw = self.produceIndividuals(min, max, q, subpopulation, inds, state, thread, [parent1, parent2])
+            nw = self.produce_individual(min, max, q, subpopulation, inds, state, thread, [parent1, parent2])
             
             q += nw
 
         return n
     
-    def produceIndividuals(self, min, max, start, subpopulation, 
+    def produce_individual(self, min, max, start, subpopulation, 
                             inds, state:EvolutionState, thread, parents:list[GPIndividual])->int:
         # how many individuals should we make?
         n = self.typicalIndsProduced()
@@ -245,6 +245,10 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
 
             if self.eff_flag:
                 j1.removeIneffectiveInstr()
+
+            # rebuild the individual if it has no effective instructions
+            if j1.getEffTreesLength() == 0:
+                j1.rebuildIndividual(state, thread)
             
             # Process second child if needed
             if n - (q - start) >= 2 and not self.tossSecondParent:
@@ -271,6 +275,10 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
                     j2 = self.microMutation.produce_individual(subpopulation, j2, state, thread)
                 if self.eff_flag:
                     j2.removeIneffectiveInstr()
+
+                # rebuild the individual if it has no effective instructions
+                if j2.getEffTreesLength() == 0:
+                    j2.rebuildIndividual(state, thread)
             
             # Validate and add children to population
             if (j1.getTreesLength() < j1.getMinNumTrees() or 

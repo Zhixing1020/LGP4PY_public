@@ -120,13 +120,13 @@ class CrossoverPipeline(BreedingPipeline):
             parent1 = self.parents[0]
             parent2 = self.parents[1]
 
-            nw = self.produceIndividuals(min, max, q, subpopulation, inds, state, thread, [parent1, parent2])
+            nw = self.produce_individual(min, max, q, subpopulation, inds, state, thread, [parent1, parent2])
 
             q += nw
 
         return n
 
-    def produceIndividuals(self, min, max, start, subpopulation, 
+    def produce_individual(self, min, max, start, subpopulation, 
                             inds, state:EvolutionState, thread, parents:list[GPIndividual])->int:
         # How many individuals should we make?
         n = self.typicalIndsProduced()

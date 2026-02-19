@@ -45,7 +45,6 @@ breed.elite.0 = 3
 # ==============================
 
 # GP population parameters
-#pop.subpop.0.species = src.ec.GPSpecies
 pop.subpop.0.species = src.lgp.species.LGPSpecies
 pop.subpop.0.species.fset = f0
 pop.subpop.0.species.ind = tasks.symbreg.individual.LGPIndividual4SR
@@ -71,7 +70,7 @@ pop.subpop.0.species.ind.output-register.5 = 5
 pop.subpop.0.species.ind.output-register.6 = 6
 pop.subpop.0.species.ind.output-register.7 = 7
 
-pop.subpop.0.species.ind.to-wrap = true
+pop.subpop.0.species.ind.to-wrap = false
 pop.subpop.0.species.ind.batch-size=100
 
 #LGP specific parameters
@@ -331,7 +330,7 @@ gp.fs.0.func.10.nc = nc1
 eval.problem= tasks.symbreg.optimization.gp_symbolic_regression.GPSymbolicRegression
 eval.problem.data=src.ec.GPData
 
-SymbolicRegression.location = D:\\data\\study\\LGP4PY\\LGP4PY\\dataset\\
+SymbolicRegression.location = D:\\data\\study\\LGP4PY\\LGP4PY\\tasks\\symbreg\\dataset\\
 eval.problem.dataname = Nguyen4
 eval.problem.fitness = RSE
 eval.problem.Kfold_index = 0

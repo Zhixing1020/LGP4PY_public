@@ -28,6 +28,7 @@ class EvolutionState:
     P_QUITONRUNCOMPLETE: str = "quit-on-run-complete" 
     P_BUILDER: str = "gp.tc.0.init"  # only for the initializer in the first tree constraint
     P_PRIMSET: str = "gp.fs"
+    P_SETUP_PROBLEM_NOW: str = "setup_problem_now" # set up the problem when we initialize the search space
 
     def __init__(self):
         from src.ec import Statistics
@@ -61,9 +62,13 @@ class EvolutionState:
         self.primitive_sets = None
 
         self.quitOnRunComplete = False
+        self.setup_problem_script = True
 
         self.job: list[None] = None
         self.runtimeArguments: list[str] = None
+
+        self.num_gen_trap_fit = 0
+        self.previous_best_ind = None
 
     def setup(self, base:str=""):
 
@@ -175,8 +180,10 @@ class EvolutionState:
         # self.evaluator.closeContacts(self, result)
 
     def startFresh(self):
-        self.output.message("Setting up")
+        self.output.message("Setting up a new run")
         self.setup()  # garbage Parameter equivalent
+        self.num_gen_trap_fit = 0
+        self.previous_best_ind = None
 
         # POPULATION INITIALIZATION
         self.output.message("Initializing Generation 0")
@@ -215,6 +222,22 @@ class EvolutionState:
         self.statistics.preEvaluationStatistics(self)
         self.evaluator.evaluatePopulation(self)
         self.statistics.postEvaluationStatistics(self)
+
+        # record best fitness
+        tmp_best_of_run = None
+        for x in range(len(self.population.subpops)):
+            for y in range(0, len(self.population.subpops[x].individuals)):
+                individual = self.population.subpops[x].individuals[y]
+                            
+                # Update best_of_run if better individual found
+                if (tmp_best_of_run is None or 
+                    individual.fitness.betterThan(tmp_best_of_run.fitness)):
+                    tmp_best_of_run = individual.clone()
+        if self.previous_best_ind == None or tmp_best_of_run.fitness.betterThan(self.previous_best_ind.fitness):
+            self.previous_best_ind = tmp_best_of_run
+            self.num_gen_trap_fit = 0
+        else:
+            self.num_gen_trap_fit = self.num_gen_trap_fit + 1
 
         # SHOULD WE QUIT?
         if self.evaluator.runComplete(self) and self.quitOnRunComplete:
@@ -256,7 +279,8 @@ class EvolutionState:
 
     def run(self):
         
-        self.startFresh()
+        # self.startFresh() # in python implementation, I separate startFresh() with run() to avoid
+        # duplicated setup
 
         result = self.R_NOTDONE
         while result == self.R_NOTDONE:

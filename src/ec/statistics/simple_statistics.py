@@ -11,11 +11,13 @@ class SimpleStatistics(Statistics):
     P_DO_MESSAGE = "do-message"
     P_DO_DESCRIPTION = "do-description"
     P_DO_PER_GENERATION_DESCRIPTION = "do-per-generation-description"
+    P_GENERATION_SKIP = "generation-skip"
 
     def __init__(self):
         super().__init__()
         self.statisticslog = 0  # stdout
         self.best_of_run:list[GPIndividual] = None
+        self.best_i:list[GPIndividual] = None # the current best individual in the population
         self.compress = False
         self.doFinal = True
         self.doGeneration = True
@@ -23,6 +25,7 @@ class SimpleStatistics(Statistics):
         self.doDescription = True
         self.doPerGenerationDescription = False
         self.warned = False
+        self.generation_skip = 1
 
     def getBestSoFar(self):
         return self.best_of_run
@@ -40,6 +43,11 @@ class SimpleStatistics(Statistics):
         self.doDescription = state.parameters.getBoolean(base.push(self.P_DO_DESCRIPTION), None, True)
         self.doPerGenerationDescription = state.parameters.getBoolean(
             base.push(self.P_DO_PER_GENERATION_DESCRIPTION), None, False)
+        self.generation_skip = state.parameters.getIntWithDefault(
+            base.push(self.P_GENERATION_SKIP), None, 1)
+        if self.generation_skip < 1:
+            state.output.fatal(
+                f"The generation skip parameter ({self.generation_skip}) must be at least 1.")
 
         if self.silentFile:
             self.statisticslog = Output.NO_LOGS
@@ -62,9 +70,9 @@ class SimpleStatistics(Statistics):
     def postEvaluationStatistics(self, state:EvolutionState):
         super().postEvaluationStatistics(state)
         
-        best_i:list[GPIndividual] = [None] * len(state.population.subpops)
+        self.best_i:list[GPIndividual] = [None] * len(state.population.subpops)
         for x in range(len(state.population.subpops)):
-            best_i[x] = state.population.subpops[x].individuals[0]
+            self.best_i[x] = state.population.subpops[x].individuals[0]
             for y in range(1, len(state.population.subpops[x].individuals)):
                 individual = state.population.subpops[x].individuals[y]
                 
@@ -72,40 +80,44 @@ class SimpleStatistics(Statistics):
                     if not self.warned:
                         state.output.warnOnce("Null individuals found in subpopulation")
                         self.warned = True
-                elif (best_i[x] is None or 
-                      individual.fitness.betterThan(best_i[x].fitness)):
-                    best_i[x] = individual
+                elif (self.best_i[x] is None or 
+                      individual.fitness.betterThan(self.best_i[x].fitness)):
+                    self.best_i[x] = individual
                     
-                if best_i[x] is None and not self.warned:
+                if self.best_i[x] is None and not self.warned:
                     state.output.warnOnce("Null individuals found in subpopulation")
                     self.warned = True
             
             # Update best_of_run if better individual found
             if (self.best_of_run[x] is None or 
-                best_i[x].fitness.betterThan(self.best_of_run[x].fitness)):
-                self.best_of_run[x] = best_i[x].clone()
+                self.best_i[x].fitness.betterThan(self.best_of_run[x].fitness)):
+                self.best_of_run[x] = self.best_i[x].clone()
         
         # Print generation statistics
-        if self.doGeneration:
+        if self.doGeneration and (state.generation % self.generation_skip == 0) \
+            or state.generation == 0 \
+            or state.generation == state.numGenerations-1:
             state.output.println(f"\nGeneration: {state.generation}", self.statisticslog)
             state.output.println("Best Individual:", self.statisticslog)
             
         for x in range(len(state.population.subpops)):
-            if self.doGeneration:
+            if self.doGeneration and (state.generation % self.generation_skip == 0) \
+            or state.generation == 0 \
+            or state.generation == state.numGenerations-1:
                 state.output.println(f"Subpopulation {x}:", self.statisticslog)
-                state.output.println(best_i[x].printIndividualForHuman(state), self.statisticslog)
-                # best_i[x].printIndividualForHumans(state, self.statisticslog)
+                state.output.println(self.best_i[x].printIndividualForHuman(state), self.statisticslog)
+                # self.best_i[x].printIndividualForHumans(state, self.statisticslog)
             
             if self.doMessage and not self.silentPrint:
-                eval_status = " " if best_i[x].evaluated else " (evaluated flag not set): "
+                eval_status = " " if self.best_i[x].evaluated else " (evaluated flag not set): "
                 state.output.message(
                     f"Subpop {x} best fitness of generation{eval_status}"
-                    f"{best_i[x].fitness.value}")
+                    f"{self.best_i[x].fitness.value}")
             
             # if (self.doGeneration and self.doPerGenerationDescription and 
             #     isinstance(state.evaluator.p_problem, SimpleProblemForm)):
             #     state.evaluator.p_problem.clone().describe(
-            #         state, best_i[x], x, 0, self.statisticslog)
+            #         state, self.best_i[x], x, 0, self.statisticslog)
 
     def finalStatistics(self, state:EvolutionState, result):
         super().finalStatistics(state, result)

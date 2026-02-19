@@ -62,10 +62,11 @@ class LGPMacroMutationPipeline(MutationPipeline):
             state.output.fatal("LGPMacroMutation Pipeline has an invalid number of prob_delete (it must be >= 0).",
                              base.push(self.P_DELETE), def_.push(self.P_DELETE))
         
-        microbase = Parameter(state.parameters.getString(base.push(self.P_MICROMUTBASE), 
-                            def_.push(self.P_MICROMUTBASE)))
+        microbase_str = state.parameters.getString(base.push(self.P_MICROMUTBASE), 
+                            def_.push(self.P_MICROMUTBASE))
+        microbase = Parameter(microbase_str) if microbase_str != None else None
         self.microMutation = None
-        if str(microbase) != "null":
+        if microbase != None and str(microbase) != "null":
             self.microMutation = state.parameters.getInstanceForParameter(
                 microbase, def_.push(self.P_MICROMUTBASE), MutationPipeline)
             self.microMutation.setup(state, microbase)
@@ -169,7 +170,7 @@ class LGPMacroMutationPipeline(MutationPipeline):
                     #         p1.argposition,
                     #         size)
                     
-                    res = self.check_points(p1, p2, j.getTree(t))
+                    res = self.check_points(p1, p2, state, thread, j, j.getTree(t))
                     if res:
                         break
                 
@@ -236,7 +237,7 @@ class LGPMacroMutationPipeline(MutationPipeline):
                     #         p1.argposition,
                     #         size)
                     
-                    res = self.check_points(p1, p2, j.getTree(t))
+                    res = self.check_points(p1, p2, state, thread, j, j.getTree(t))
                     if res:
                         break
                 
@@ -258,6 +259,10 @@ class LGPMacroMutationPipeline(MutationPipeline):
                 j = self.microMutation.produce_individual(subpopulation, j, state, thread)
         
         j.breedingPipe = self
+
+        if j.getEffTreesLength() == 0:
+            j.rebuildIndividual(state, thread)
+
         return j
     
     def getLegalInsertIndex(self, ind:LGPIndividual, state:EvolutionState, thread):
@@ -290,8 +295,19 @@ class LGPMacroMutationPipeline(MutationPipeline):
             state.output.fatal("illegal mutateFlag in LGP macro mutation")
         return res
     
-    def check_points(self, p1:GPNode, p2:GPNode, treeStr:GPTreeStruct):
+    def check_points(self, p1:GPNode, p2:GPNode, state:EvolutionState, thread:int, ind:LGPIndividual, treeStr:GPTreeStruct):
         if self.mutateFlag == self.FREEMACROMUT:
             return True
-        return (p1.atDepth() == 0 and 
-                p2.getIndex() in treeStr.effRegisters)
+        
+        # if mutateFlag != self.FREEMACROMUT, we have to check and maintain the effectiveness
+        res = False
+
+        if len(treeStr.effRegisters) > 0 and not p2.getIndex() in treeStr.effRegisters:
+            p2.setIndex(state.random[thread].choice(list(treeStr.effRegisters)))
+            if p1.printRootedTreeInString() == p2.printRootedTreeInString() \
+                and len(treeStr.effRegisters) > 1:
+                res = False
+            else:
+                res = True
+        
+        return res

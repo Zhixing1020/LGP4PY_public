@@ -177,7 +177,7 @@ class LGPIndividual(GPIndividual):
                 # )
                 tree.buildTree(state, thread)
                 self.addTree(0, tree)
-                self.updateStatus()
+                # self.updateStatus()
                 self.removeIneffectiveInstr()
                 trial -= 1
 
@@ -456,8 +456,9 @@ class LGPIndividual(GPIndividual):
             self.updateStatus()
         return sum(1 for tree in self.getTreelist() if tree.status)
 
-    def getAvgNumEffFun(self) -> float:
-        self.updateStatus()
+    def getAvgNumEffFun(self, update_status:bool=True) -> float:
+        if update_status:
+            self.updateStatus()
         eff_trees = [tree for tree in self.getTreelist() if tree.status]
         if not eff_trees:
             return 0.0

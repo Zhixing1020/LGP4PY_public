@@ -13,6 +13,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
     P_PROBWRIREG = "probwritereg"
     P_PROBREADREG = "probreadreg"
     P_CONSTSTEP = "conststep"
+    P_MICROMUTBASE = "micro_base"
     
     functions = 0
     cons = 1
@@ -29,6 +30,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
         self.p_readreg = 0.0
         self.cons_step = 0
         self.componenttype = 0
+        self.microMutation:LGPMicroMutationPipeline = None
     
     def setup(self, state:EvolutionState, base:Parameter):
         super().setup(state, base)
@@ -66,6 +68,15 @@ class LGPMicroMutationPipeline(MutationPipeline):
         if self.cons_step <= 0:
             state.output.fatal("LGPFreeMutation Pipeline has an invalid number of cons step (it must be > 0).",
                              base.push(self.P_CONSTSTEP), def_.push(self.P_CONSTSTEP))
+        
+        microbase_str = state.parameters.getString(base.push(self.P_MICROMUTBASE), 
+                            def_.push(self.P_MICROMUTBASE))
+        microbase = Parameter(microbase_str) if microbase_str != None else None
+        self.microMutation = None
+        if microbase != None and str(microbase) != "null":
+            self.microMutation = state.parameters.getInstanceForParameter(
+                microbase, def_.push(self.P_MICROMUTBASE), MutationPipeline)
+            self.microMutation.setup(state, microbase)
     
     def produce(self, min, max, start, subpopulation, inds:list[LGPIndividual], state:EvolutionState, thread)->int:
         # grab individuals from our source
@@ -85,7 +96,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
         return n
 
     
-    def produce_individual(self, subpopulation, ind, state, thread)-> LGPIndividual:
+    def produce_individual(self, subpopulation:int, ind:LGPIndividual, state:EvolutionState, thread:int)-> LGPIndividual:
         # initializer = state.initializer
 
         parent:LGPIndividual = ind
@@ -223,7 +234,14 @@ class LGPMicroMutationPipeline(MutationPipeline):
                 tree.child.argposition = 0
                 j.setTree(x, tree)
         
+        if j.getEffTreesLength() == 0:
+            j.rebuildIndividual(state, thread)
+
+        if self.microMutation is not None:
+            j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+
         j.breedingPipe = self
+  
         return j
     
     def check_points(self, p1:GPNode, p2:GPNode, state:EvolutionState, thread:int, ind:LGPIndividual, treeStr:GPTreeStruct):
@@ -231,15 +249,25 @@ class LGPMicroMutationPipeline(MutationPipeline):
         
         if p1.expectedChildren() == p2.expectedChildren():
             if str(p1) != str(p2):
-                if self.effflag and len(treeStr.effRegisters) > 0:
-                    if p1.atDepth() == 0 and not p2.getIndex() in treeStr.effRegisters:
-                        # guarantee effectiveness
-                        eff_list = list(treeStr.effRegisters)
-                        p2.setIndex(eff_list[state.random[thread].randint(0,len(eff_list)-1)])
-                        if str(p1) == str(p2) and len(treeStr.effRegisters) > 1:
-                            res = False
-                        else:
-                            res = True
+                # if self.effflag and len(treeStr.effRegisters) > 0:
+                #     if p1.atDepth() == 0 and not p2.getIndex() in treeStr.effRegisters:
+                #         # guarantee effectiveness
+                #         eff_list = list(treeStr.effRegisters)
+                #         p2.setIndex(eff_list[state.random[thread].randint(0,len(eff_list)-1)])
+                #         if str(p1) == str(p2) and len(treeStr.effRegisters) > 1:
+                #             res = False
+                #         else:
+                #             res = True
+                #     else:
+                #         res = True
+                # else:
+                #     res = True
+                if p1.atDepth() == 0 and not p2.getIndex() in treeStr.effRegisters:
+                    # guarantee effectiveness
+                    eff_list = list(treeStr.effRegisters)
+                    p2.setIndex(eff_list[state.random[thread].randint(0,len(eff_list)-1)])
+                    if str(p1) == str(p2) and len(treeStr.effRegisters) > 1:
+                        res = False
                     else:
                         res = True
                 else:

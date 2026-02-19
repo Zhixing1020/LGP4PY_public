@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import random
+import numpy as np
 from typing import List, Optional, Dict, Any, Tuple
 from multiprocessing import cpu_count
 from src.ec import *
@@ -184,6 +185,7 @@ Format:
     # @staticmethod
     def initialize(parameters: ParameterDatabase, randomSeedOffset: int) -> EvolutionState:
         """Initializes an evolutionary run."""
+        os.environ["PYTHONHASHSEED"] = "1000117"
         return Evolve.initializeWithOutput(parameters, randomSeedOffset, Evolve.buildOutput())
 
     @staticmethod
@@ -225,6 +227,7 @@ Format:
             
             seeds.append(seed)
             rng = random.Random(seed)
+            np.random.seed(seed)
             rng = Evolve.primeGenerator(rng)
             rngs.append(rng)
 
@@ -299,8 +302,8 @@ Format:
             # if numJobs > 1:
             #     jobFilePrefix = f"job.{job}."
             #     state.checkpointPrefix = jobFilePrefix + state.checkpointPrefix
-                                
-            state.run()  # C_STARTED_FRESH
+            state.startFresh()            
+            state.run()  
             # Evolve.cleanup(state)
             parameters = None  # Force reload next time
             # except Exception as e:

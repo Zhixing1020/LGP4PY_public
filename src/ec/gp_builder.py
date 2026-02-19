@@ -47,7 +47,7 @@ class GPBuilder:
         if self.probCons < 0:
             state.output.fatal("The constant probability for a KozaBuilder must be >= 0.0")
 
-    def can_add_constant(self, parent:GPNodeParent)->bool:
+    def canAddConstant(self, parent:GPNodeParent)->bool:
         root:GPNode = parent
         if isinstance(root, FlowOperator):
             return True
@@ -159,7 +159,7 @@ class GPBuilder:
             and (tried_terminals := True) \
             and terminals:
 
-            if state.random[thread].random() < 0.5 and self.can_add_constant(parent):
+            if state.random[thread].random() < 0.5 and self.canAddConstant(parent):
                 n = state.random[thread].choice(constants).lightClone()
             else:
                 n = state.random[thread].choice(nonconstants).lightClone()
@@ -175,7 +175,7 @@ class GPBuilder:
         # filter feasible functions
         nodes_to_pick = []
         for cand in nonregisters: # we first force to pick a function
-            if all( cand != c for c in terminals):
+            if all( cand.__class__ != c.__class__ for c in terminals):
                 nodes_to_pick.append(cand.lightClone())
 
         if not nodes_to_pick:
@@ -218,7 +218,7 @@ class GPBuilder:
             and (tried_terminals := True) \
             and terminals:
             # pick a terminal or constant
-            if state.random[thread].random() < 0.5 and self.can_add_constant(parent):
+            if state.random[thread].random() < 0.5 and self.canAddConstant(parent):
                 n = state.random[thread].choice(constants).lightClone()
             else:
                 n = state.random[thread].choice(nonconstants).lightClone()
@@ -234,7 +234,7 @@ class GPBuilder:
 
         if current == 1:
             for cand in nonregisters: # we first force to pick a function
-                if all( cand != c for c in terminals):
+                if all( cand.__class__ != c.__class__ for c in terminals):
                     nodes_to_pick.append(cand.lightClone())
 
             if not nodes_to_pick:
@@ -242,7 +242,7 @@ class GPBuilder:
                 nodes_to_pick = terminals
         else:
             for cand in nonregisters:
-                if all( cand != c for c in constants) or self.can_add_constant(parent):
+                if all( cand.__class__ != c.__class__ for c in constants) or self.canAddConstant(parent):
                     #if it is not a constant or we can add a constant, we can pick it
                     nodes_to_pick.append(cand.lightClone())
 

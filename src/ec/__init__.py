@@ -5,6 +5,7 @@ from .fitness import Fitness
 from .gp_data import GPData
 from .gp_node_parent import GPNodeParent
 from .gp_node import GPNode, GPNodeGather
+from .gp_node_selector import GPNodeSelector
 from .gp_primitive_set import GPPrimitiveSet
 from .gp_tree import GPTree
 from .gp_builder import GPBuilder
@@ -33,6 +34,7 @@ __all__ = [
     "GPNode",
     "GPNodeGather",
     "GPNodeParent",
+    "GPNodeSelector",
     "GPPrimitiveSet",
     "Breeder",
     "BreedDefault",

@@ -190,7 +190,7 @@ class GPNode(GPNodeParent):
         return cparent
 
     def contains(self, subnode) -> bool:
-        if subnode == self:
+        if subnode is self:
             return True
         for child in self.children:
             if child.contains(subnode):
@@ -225,7 +225,7 @@ class GPNode(GPNodeParent):
         tree, then its subtree is replaced with a deep-cloned copy of
         newSubtree.  The result has everything set except for the root
         node's parent and argposition. '''
-        if self == oldSubtree:
+        if self is oldSubtree:
             return newSubtree.clone()
         else:
             newnode = self.lightClone()
@@ -244,7 +244,7 @@ class GPNode(GPNodeParent):
         The result has everything set except for the root
         node's parent and argposition.
         '''
-        if self == oldSubtree:
+        if self is oldSubtree:
             return newSubtree
         else:
             newnode = self.lightClone()
@@ -276,7 +276,7 @@ class GPNode(GPNodeParent):
         )
 
     def rootedTreeEquals(self, node: 'GPNode') -> bool:
-        if not self == node:
+        if self is not node:
             return False
         for x in range(len(self.children)):
             if not self.children[x].rootedTreeEquals(node.children[x]):
@@ -328,6 +328,11 @@ class GPNode(GPNodeParent):
         from src.lgp.individual.primitive import ReadRegisterGPNode
         if isinstance(self, ReadRegisterGPNode):
             s.add(self.getIndex())  # Assumes getIndex() method exists in ReadRegisterGPNode
+
+        from src.lgp.algorithm.typed_lgp.individual.primitives.typed_feature import TypedFeature
+        if isinstance(self, TypedFeature) and isinstance(self.input_arg, ReadRegisterGPNode):
+            s.add(self.input_arg.getIndex()) 
+
 
         for child in self.children:
             child.collectReadRegister(s)

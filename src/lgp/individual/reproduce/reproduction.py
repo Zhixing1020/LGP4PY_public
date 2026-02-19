@@ -39,6 +39,7 @@ class ReproductionPipeline(BreedingPipeline):
         if self.mustClone or isinstance(self.sources[0], SelectionMethod):
             for q in range(start, n + start):
                 inds[q] = inds[q].clone()
+                inds[q].evaluated = False   # force the re-evaluation on the reproduced individuals
         return n
     
 from dataclasses import dataclass

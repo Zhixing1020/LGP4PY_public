@@ -72,18 +72,22 @@ class Subpopulation:
         self.duplicateSet:Set[str] = set() if self.numDuplicateRetries >= 1 else None
 
         for i in range(start, len(self.individuals)):
-            for _ in range(self.numDuplicateRetries + 1):
+            for d in range(self.numDuplicateRetries + 1):
                 ind = self.species.newIndividual(state, thread)
-                if self.duplicateSet is None or ind.printTrees(state) not in self.duplicateSet:
+                if self.duplicateSet is None or ind.printTrees(state) not in self.duplicateSet or d == self.numDuplicateRetries:
                     self.individuals[i] = ind
                     if self.duplicateSet is not None and ind.printTrees() not in self.duplicateSet:
                         self.duplicateSet.add(ind.printTrees())
                     break
+                
 
     def emptyclone(self)->'Subpopulation':
         subp = self.__class__()
         subp.species = self.species
         subp.numDuplicateRetries = self.numDuplicateRetries
-        subp.individuals = [None] * len(self.individuals)
-        subp.duplicateSet = set() if self.numDuplicateRetries >= 1 else None
+        subp.individuals = [None] * len(self.individuals) # empty clone
+        subp.duplicateSet = None
+        if self.numDuplicateRetries >= 1:
+            subp.duplicateSet = set()
+            subp.duplicateSet.update(self.duplicateSet)
         return subp

@@ -93,6 +93,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         self.normalized = parameters.getBoolean(base.push(self.NORMALIZE_P), default.push(self.NORMALIZE_P))
         self.doValidation = parameters.getBoolean(self.VALIDATION_P, False)
 
+        
         self.setProblem(None, loca, datan, fitn, istraining)
 
     def setup(self, state, base):
@@ -102,14 +103,6 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
 
         if not isinstance(self.input, GPData):
             state.output.fatal(f"data class must subclass from GPData: {base.push(self.P_DATA)} or {def_param.push(self.P_DATA)}")
-
-        self.location = state.parameters.getString(base.push(self.LOCATION_P), def_param.push(self.LOCATION_P))
-        if self.location is None or self.location == "":
-            state.output.fatal(f"Empty location for the data: {base.push(self.LOCATION_P)} or {def_param.push(self.LOCATION_P)}")
-
-        self.dataname = state.parameters.getString(base.push(self.DATA_NAME_P), def_param.push(self.DATA_NAME_P))
-        if self.dataname is None or self.dataname == "":
-            state.output.fatal(f"Empty name for the data: {base.push(self.DATA_NAME_P)} or {def_param.push(self.DATA_NAME_P)}")
 
         self.fitness = state.parameters.getString(base.push(self.FITNESS_P), def_param.push(self.FITNESS_P))
         self.normalized = state.parameters.getBoolean(base.push(self.NORMALIZE_P), def_param.push(self.NORMALIZE_P))
@@ -132,7 +125,16 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
                 raise ValueError("Target index must be >= 0.")
             self.targets.append(tar)
 
-        self.setProblem(state, self.location, self.dataname, self.fitness, True)
+        if state.setup_problem_script:
+            self.location = state.parameters.getString(base.push(self.LOCATION_P), def_param.push(self.LOCATION_P))
+            if self.location is None or self.location == "":
+                state.output.fatal(f"Empty location for the data: {base.push(self.LOCATION_P)} or {def_param.push(self.LOCATION_P)}")
+
+            self.dataname = state.parameters.getString(base.push(self.DATA_NAME_P), def_param.push(self.DATA_NAME_P))
+            if self.dataname is None or self.dataname == "":
+                state.output.fatal(f"Empty name for the data: {base.push(self.DATA_NAME_P)} or {def_param.push(self.DATA_NAME_P)}")
+
+            self.setProblem(state, self.location, self.dataname, self.fitness, True)
 
     def setProblem(self, state:EvolutionState, loca:str, datan:str, fitn:str, istraining:bool):
         self.location = loca
@@ -169,6 +171,37 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         if self.istraining and state is not None and self.doValidation:
             self.split_validation(state)
 
+    def load_data(self, state:EvolutionState, loca:str, datan:str, istraining:bool=True):
+        """mostly the same as setProblem(...) but without the setting of fitness function"""
+        self.location = loca
+        self.dataname = datan
+        self.istraining = istraining
+
+        sep = os.sep  # Use the OS-specific path separator, like '\\' for Windows or '/' for Unix-like systems
+        if not self.location.endswith(sep):
+            self.location += sep
+        dataname_address = f"{self.dataname}{sep}" if not self.dataname.endswith(sep) else ""
+
+        suffix = "train" if self.istraining else "test"
+        filename_X = f"{self.location}{dataname_address}{self.dataname}_X_{suffix}_F{self.foldindex}.txt"
+        filename_y = f"{self.location}{dataname_address}{self.dataname}_y_{suffix}_F{self.foldindex}.txt"
+
+        print(f"evaluating on X: {filename_X}, Y: {filename_y}")
+
+        if not os.path.exists(filename_X):
+            raise FileNotFoundError(f"The dataset {filename_X} does not exist")
+
+        if self.istraining and not os.path.exists(filename_y):
+            raise FileNotFoundError(f"The dataset {filename_y} does not exist")
+
+        self.read_X_file(filename_X)
+        self.read_y_file(filename_y)
+
+        if self.normalized:
+            self.normalizedataBasedTraining()
+
+        if self.istraining and state is not None and self.doValidation:
+            self.split_validation(state)
     
     def read_X_file(self, filepath):
         with open(filepath, 'r') as f:

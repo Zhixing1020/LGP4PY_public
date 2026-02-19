@@ -121,6 +121,9 @@ class LGPSwapPipeline(LGPMicroMutationPipeline):
         if self.microMutation is not None:
             j = self.microMutation.produce_individual(subpopulation, j, state, thread)
         
+        if j.getEffTreesLength() == 0:
+            j.rebuildIndividual(state, thread)
+        
         j.breedingPipe = self
         return j
     
