@@ -5,7 +5,7 @@
 
 1. Locate the parameter file [FLR-LGP-SR.params](./FLReduction/parameters/FLR-LGP-SR.params).
 2. Locate the [training and test dataset](./dataset/).
-3. Locate the main function [lgp4SR_main.py](./lgp4SR_main.py)
+3. Locate the main function [lgp4SR_main.py](../../../lgp4SR_main.py)
 4. The "configurations" in `launch.json` can be:
 ```
 {
