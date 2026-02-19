@@ -22,6 +22,8 @@ This folder applies LGP to solve symbolic regression problems.
 
 *  `lgp_regressor.py` wraps the LGP training process as a single model based on the LGP template.
 
+*  `lgp4SR_main.py` implements the main function, inherited from `MainRunner`
+
 
 ### Running Examples ###
 
