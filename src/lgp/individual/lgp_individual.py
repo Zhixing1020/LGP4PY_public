@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge
 
 class LGPIndividual(GPIndividual):
+
     P_NUMREGISTERS = "numregisters"
     P_MAXNUMTREES = "maxnumtrees"
     P_MINNUMTREES = "minnumtrees"
@@ -305,20 +306,34 @@ class LGPIndividual(GPIndividual):
                 regs.append(value.copy())
             self.setRegisters(regs)
 
-    def printTrees(self, state: EvolutionState=None)->str:
-        x = 0
-        res = ""
+    # def printTrees(self, state: EvolutionState=None)->str:
+    #     x = 0
+    #     res = ""
+    #     for x, tree in enumerate(self.treelist):
+    #         if not tree.status:
+    #             res += "//"
+    #         res += (f"Ins {x}:\t{str(tree)}\n")
+
+    #     if self.towrap:
+    #         length = len(self.treelist)
+    #         for x, tree in enumerate(self.wraplist):
+    #             res += (f"Ins {x+length}:\t{str(tree)}\n")
+        
+    #     return res
+    def printTrees(self, state: EvolutionState=None) -> str:
+        parts = []
+
         for x, tree in enumerate(self.treelist):
             if not tree.status:
-                res += "//"
-            res += (f"Ins {x}:\t{str(tree)}\n")
+                parts.append("//")
+            parts.append(f"Ins {x}:\t{tree}\n")
 
         if self.towrap:
-            length = len(self.treelist)
+            offset = len(self.treelist)
             for x, tree in enumerate(self.wraplist):
-                res += (f"Ins {x+length}:\t{str(tree)}\n")
-        
-        return res
+                parts.append(f"Ins {x + offset}:\t{tree}\n")
+
+        return "".join(parts)
     
     def printIndividualForHuman(self, state: 'EvolutionState')->str:
         res = self.EVALUATED_PREAMBLE + ("true" if self.evaluated else "false") + "\n"

@@ -8,6 +8,7 @@ class BreedingSource(ABC):
     BreedingSource is the general blueprint for any object that can "breed" or "supply" individuals — including both selection and variation mechanisms.
     It is the superclass of BreedingPipeline and SelectionMethod
     '''
+    __slots__ = ("probability",)
     P_PROB = "prob"
     NO_PROBABILITY = -1.0
 

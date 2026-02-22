@@ -6,7 +6,7 @@ from src.ec.util.parameter import Parameter
 from src.ec.subpopulation import Subpopulation
 
 class Population:
-
+    __slots__ = ("subpops",)
     P_SIZE = "subpops"
     P_SUBPOP = "subpop"
 

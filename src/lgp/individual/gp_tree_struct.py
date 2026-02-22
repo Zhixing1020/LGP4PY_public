@@ -8,6 +8,8 @@ from typing import Set, List
 # from copy import deepcopy
 
 class GPTreeStruct(GPTree):
+    """define the class of LGP instructions"""
+    __slots__ = ("effRegisters", "status", "type")
     ARITHMETIC = 0
     BRANCHING = 1
     ITERATION = 2

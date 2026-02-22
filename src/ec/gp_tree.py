@@ -10,7 +10,8 @@ from src.ec.gp_defaults import GPDefaults
 from src.ec.gp_node_parent import GPNodeParent
 
 class GPTree(GPNodeParent):
-
+    
+    __slots__ = ("child", "owner", "species")
     P_TREE: str = "tree"
 
     def __init__(self):
@@ -40,13 +41,47 @@ class GPTree(GPNodeParent):
         newtree.species = self.species
         return newtree
 
-    def clone(self) -> 'GPTree':
+    # def clone(self) -> 'GPTree':
+    #     newtree = self.lightClone()
+    #     if self.child is not None:
+    #         newtree.child = self.child.clone()  # assumes GPNode.clone() exists
+    #         newtree.child.parent = newtree
+    #         newtree.child.argposition = 0
+    #     # still share the same owner
+    #     return newtree
+    def clone(self) -> "GPTree":
         newtree = self.lightClone()
-        if self.child is not None:
-            newtree.child = self.child.clone()  # assumes GPNode.clone() exists
-            newtree.child.parent = newtree
-            newtree.child.argposition = 0
-        # still share the same owner
+
+        root = self.child
+        if root is None:
+            return newtree
+
+        # Clone root
+        new_root = root.lightClone()
+        new_root.parent = newtree
+        new_root.argposition = 0
+        newtree.child = new_root
+
+        # Stack: (old_node, new_node)
+        stack = [(root, new_root)]
+
+        while stack:
+            old, new = stack.pop()
+
+            children = old.children
+            if not children:
+                continue
+
+            new_children = []
+            for i, c in enumerate(children):
+                nc = c.lightClone()
+                nc.parent = new
+                nc.argposition = i
+                new_children.append(nc)
+                stack.append((c, nc))
+
+            new.children = new_children
+
         return newtree
     
     def setup(self, state:EvolutionState, base:Parameter):

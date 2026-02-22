@@ -6,6 +6,7 @@ from typing import Set
 from src.ec.util import Parameter, ParameterDatabase
 
 class Subpopulation:
+    __slots__ = ("individuals", "species", "duplicateSet", "numDuplicateRetries",)
     P_SUBPOPULATION = "subpop"
     P_SUBPOPSIZE = "size"
     P_RETRIES = "duplicate-retries"

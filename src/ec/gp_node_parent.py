@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import copy
 
 class GPNodeParent(ABC):
+    __slots__ = ()
     def __init__(self):
         pass
 

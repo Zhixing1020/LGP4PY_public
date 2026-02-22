@@ -14,7 +14,7 @@ class BreedingPipeline(BreedingSource):
     BreedingPipeline is a concrete subclass of BreedingSource that performs genetic operations like crossover, mutation, or reproduction. 
     It takes input from one or more other BreedingSources (often SelectionMethods), applies a genetic operator, and outputs individuals.
     '''
-    
+    __slots__ = ("sources", "operatorRate", "mybase",)
     #Indicates that a source is the exact same source as the previous source.
     V_SAME = "same" 
 

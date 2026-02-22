@@ -11,6 +11,7 @@ from typing import Type
 from copy import deepcopy
 
 class GPSpecies(ABC):
+    __slots__ = ("primitiveset", "f_prototype", "i_prototype", "pipe_prototype",)
     P_INDIVIDUAL: str = "ind"
     P_PIPE: str = "pipe"
     P_FITNESS: str = "fitness"

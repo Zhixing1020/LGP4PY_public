@@ -127,7 +127,7 @@ class NeighborhoodSearchFast(NeighborhoodSearch):
                 # Retrieve new instruction (IndexList4LGP_FLR specific method)
                 newInstr:GPTreeStruct = indexlist.getRandSymbolByIndex(newsym, state, thread, subpopulation)
                 
-                newind.setTree(i, newInstr)
+                newind.setTree(i, newInstr, update_status=False)
                 checkList.append(newInstr)
 
         newind.updateStatus()
