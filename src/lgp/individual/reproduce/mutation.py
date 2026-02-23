@@ -111,7 +111,7 @@ class MutationPipeline(BreedingPipeline):
 
         return n
 
-    def produce_individual(self, subpopulation, ind, state:EvolutionState, thread)->GPIndividual:
+    def produce_individual(self, subpopulation, ind, state:EvolutionState, thread, no_clone:bool=False)->GPIndividual:
         # initializer = state.initializer
 
         parent:GPIndividual = ind

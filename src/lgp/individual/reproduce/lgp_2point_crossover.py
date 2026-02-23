@@ -241,13 +241,13 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
             
             # Apply micro mutation if configured
             if self.microMutation is not None:
-                j1 = self.microMutation.produce_individual(subpopulation, j1, state, thread)
+                j1 = self.microMutation.produce_individual(subpopulation, j1, state, thread, no_clone=True)
 
             if self.eff_flag:
                 j1.removeIneffectiveInstr()
 
             # rebuild the individual if it has no effective instructions
-            if j1.getEffTreesLength() == 0:
+            if j1.getEffTreesLength(update_status=False) == 0:
                 j1.rebuildIndividual(state, thread)
             
             # Process second child if needed
@@ -272,12 +272,12 @@ class LGP2PointCrossoverPipeline(CrossoverPipeline):
                         j2.updateStatus()
                 
                 if self.microMutation is not None:
-                    j2 = self.microMutation.produce_individual(subpopulation, j2, state, thread)
+                    j2 = self.microMutation.produce_individual(subpopulation, j2, state, thread, no_clone=True)
                 if self.eff_flag:
                     j2.removeIneffectiveInstr()
 
                 # rebuild the individual if it has no effective instructions
-                if j2.getEffTreesLength() == 0:
+                if j2.getEffTreesLength(update_status=False) == 0:
                     j2.rebuildIndividual(state, thread)
             
             # Validate and add children to population

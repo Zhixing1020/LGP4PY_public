@@ -89,7 +89,7 @@ class LGPMacroMutationPipeline(MutationPipeline):
         return n
 
     
-    def produce_individual(self, subpopulation, ind, state, thread)->LGPIndividual:
+    def produce_individual(self, subpopulation, ind, state, thread, no_clone:bool=False)->LGPIndividual:
         # initializer = state.initializer
             
         i:LGPIndividual = ind
@@ -99,7 +99,7 @@ class LGPMacroMutationPipeline(MutationPipeline):
             state.output.fatal("LGP Mutation Pipeline attempted to fix tree.0 to a value which was out of bounds of the array of the individual's trees. Check the pipeline's fixed tree values -- they may be negative or greater than the number of trees in an individual")
 
         j:LGPIndividual = None
-        if isinstance(self.sources[0], BreedingPipeline):
+        if isinstance(self.sources[0], BreedingPipeline) or no_clone:
             # It's already a copy
             j = i
         else:
@@ -256,11 +256,11 @@ class LGPMacroMutationPipeline(MutationPipeline):
             j.removeIneffectiveInstr()
         elif self.mutateFlag in [self.EFFMACROMUT, self.FREEMACROMUT]:
             if self.microMutation is not None:
-                j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+                j = self.microMutation.produce_individual(subpopulation, j, state, thread, no_clone=True)
         
         j.breedingPipe = self
 
-        if j.getEffTreesLength() == 0:
+        if j.getEffTreesLength(update_status=False) == 0:
             j.rebuildIndividual(state, thread)
 
         return j

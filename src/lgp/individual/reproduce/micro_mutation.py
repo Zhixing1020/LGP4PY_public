@@ -96,7 +96,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
         return n
 
     
-    def produce_individual(self, subpopulation:int, ind:LGPIndividual, state:EvolutionState, thread:int)-> LGPIndividual:
+    def produce_individual(self, subpopulation:int, ind:LGPIndividual, state:EvolutionState, thread:int, no_clone:bool=False)-> LGPIndividual:
         # initializer = state.initializer
 
         parent:LGPIndividual = ind
@@ -113,7 +113,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
         self.randomGetComponentType(state, thread)
 
         j = None
-        if isinstance(self.sources[0], BreedingPipeline):
+        if isinstance(self.sources[0], BreedingPipeline) or no_clone:
             # it's already a copy
             j = parent
         else:
@@ -222,23 +222,27 @@ class LGPMicroMutationPipeline(MutationPipeline):
                 tree.child = parent.getTree(x).child.cloneReplacingNoSubclone(p2, p1)
                 tree.child.parent = tree
                 tree.child.argposition = 0
-                j.setTree(x, tree)
+                j.setTree(x, tree, update_status=False)
+                if x < j.getTreesLength()-1:
+                    j.updateStatus(n=x+1, tar=j.getTree(x).effRegisters)
+                else:
+                    j.updateStatus()
                 j.evaluated = False
-            else:
-                x = t
-                tree = j.getTree(x)
-                tree = parent.getTree(x).clone()
-                tree.owner = j
-                tree.child = parent.getTree(x).child.clone()
-                tree.child.parent = tree
-                tree.child.argposition = 0
-                j.setTree(x, tree)
+            # else:
+            #     x = t
+            #     tree = j.getTree(x)
+            #     tree = parent.getTree(x).clone()
+            #     tree.owner = j
+            #     tree.child = parent.getTree(x).child.clone()
+            #     tree.child.parent = tree
+            #     tree.child.argposition = 0
+            #     j.setTree(x, tree)
         
-        if j.getEffTreesLength() == 0:
+        if j.getEffTreesLength(update_status=False) == 0:
             j.rebuildIndividual(state, thread)
 
         if self.microMutation is not None:
-            j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+            j = self.microMutation.produce_individual(subpopulation, j, state, thread, no_clone=True)
 
         j.breedingPipe = self
   

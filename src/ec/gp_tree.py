@@ -15,7 +15,7 @@ class GPTree(GPNodeParent):
     P_TREE: str = "tree"
 
     def __init__(self):
-        super()
+        # super()
         self.child:GPNode = None
         self.owner = None
         self.species = None

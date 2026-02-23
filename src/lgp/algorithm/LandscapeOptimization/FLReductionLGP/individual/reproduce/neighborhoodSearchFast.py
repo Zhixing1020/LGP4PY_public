@@ -153,7 +153,7 @@ class NeighborhoodSearchFast(NeighborhoodSearch):
         # Check constraints (min/max length, effective length)
         if (newind.getTreesLength() < newind.getMinNumTrees() or 
             newind.getTreesLength() > newind.getMaxNumTrees() or 
-            newind.getEffTreesLength() < 1):
+            newind.getEffTreesLength(update_status=False) < 1):
             newind.rebuildIndividual(state, thread)
 
         # 8. Effectiveness Optimization

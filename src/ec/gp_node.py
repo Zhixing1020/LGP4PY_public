@@ -40,7 +40,7 @@ class GPNode(GPNodeParent):
     CHILDREN_UNKNOWN: int = -1
 
     def __init__(self):
-        super()
+        # super()
         # the parent of this GP node
         self.parent:GPNode = None
 

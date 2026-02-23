@@ -25,6 +25,7 @@ eval = src.ec.Evaluator
 stat = src.ec.SimpleStatistics
 stat.file =$out.stat
 stat.silent.file = false
+stat.generation-skip = 2
 stat.num-children = 1
 stat.child.0 = src.lgp.statistics.lgp_short_statistics.LGPStatistics
 stat.child.0.file = $outtabular.stat

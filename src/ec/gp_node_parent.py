@@ -12,4 +12,5 @@ class GPNodeParent(ABC):
 
     # @abstractmethod
     def clone(self)->'GPNodeParent':
-        return self.__class__()
+        # return self.__class__()
+        return self.__class__.__new__(self.__class__)

@@ -60,11 +60,11 @@ class LGPSwapPipeline(LGPMicroMutationPipeline):
         
         return n
     
-    def produce_individual(self, subpopulation, ind, state:EvolutionState, thread)->LGPIndividual:
+    def produce_individual(self, subpopulation, ind, state:EvolutionState, thread, no_clone:bool=False)->LGPIndividual:
         i:LGPIndividual = ind
         j:LGPIndividual = None
 
-        if isinstance(self.sources[0], BreedingPipeline):
+        if isinstance(self.sources[0], BreedingPipeline) or no_clone:
             # it's already a copy
             j = i
         else:
@@ -74,13 +74,13 @@ class LGPSwapPipeline(LGPMicroMutationPipeline):
         if j.getTreesLength() == 1:
             # swapping only works with individuals with more than one instruction
             if self.microMutation is not None:
-                j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+                j = self.microMutation.produce_individual(subpopulation, j, state, thread, no_clone=True)
             return j
         
-        if isinstance(self.sources[0], BreedingPipeline):
-                j = i
-        else:
-            j = i.lightClone()
+        # if isinstance(self.sources[0], BreedingPipeline):
+        #         j = i
+        # else:
+        #     j = i.lightClone()
 
         # get the swap step size
         step = state.random[thread].randint(0, self.stepSize-1) + 1
@@ -119,9 +119,9 @@ class LGPSwapPipeline(LGPMicroMutationPipeline):
         #         break
         
         if self.microMutation is not None:
-            j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+            j = self.microMutation.produce_individual(subpopulation, j, state, thread, no_clone=True)
         
-        if j.getEffTreesLength() == 0:
+        if j.getEffTreesLength(update_status=False) == 0:
             j.rebuildIndividual(state, thread)
         
         j.breedingPipe = self
@@ -153,4 +153,10 @@ class LGPSwapPipeline(LGPMicroMutationPipeline):
         instr2 = ind.getTree(p2)
         
         ind.setTree(p1, instr2, update_status=False)
-        ind.setTree(p2, instr1)
+        ind.setTree(p2, instr1, update_status=False)
+
+        n = max(p1, p2) + 2  # +1: the number of to-be-updated instructions, +1: one more instruction to get effective registers
+        if n < ind.getTreesLength():
+            ind.updateStatus(n=n, tar=ind.getTree(n-1).effRegisters)
+        else:
+            ind.updateStatus()

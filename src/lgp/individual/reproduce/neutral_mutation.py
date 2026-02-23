@@ -73,7 +73,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
         return n
 
     
-    def produce_individual(self, subpopulation, ind, state, thread)->LGPIndividual:
+    def produce_individual(self, subpopulation, ind, state, thread, no_clone:bool=False)->LGPIndividual:
         # initializer = state.initializer
             
         i:LGPIndividual = ind
@@ -83,7 +83,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
             state.output.fatal("LGP Mutation Pipeline attempted to fix tree.0 to a value which was out of bounds of the array of the individual's trees. Check the pipeline's fixed tree values -- they may be negative or greater than the number of trees in an individual")
 
         j:LGPIndividual = None
-        if isinstance(self.sources[0], BreedingPipeline):
+        if isinstance(self.sources[0], BreedingPipeline) or no_clone:
             # It's already a copy
             j = i
         else:
@@ -169,7 +169,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
             
             # Delete instruction
             elif (j.getTreesLength() > j.getMinNumTrees() and
-                  j.getEffTreesLength() < j.getTreesLength() and
+                  j.getEffTreesLength(update_status=False) < j.getTreesLength() and
                   (state.random[thread].uniform(0, 1) < self.probInsert + self.probDelete or
                    j.getTreesLength() == j.getMaxNumTrees())):
                 
@@ -180,7 +180,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
                 j.evaluated = False
             
             # Replace instruction (when min == max)
-            elif (j.getTreesLength() > j.getEffTreesLength()):
+            elif (j.getTreesLength() > j.getEffTreesLength(update_status=False)):
                 
                 t = self.getLegalDeleteIndex(j, state, thread)
                 
@@ -238,7 +238,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
                 j.evaluated = False       
         
         if self.microMutation is not None:
-            j = self.microMutation.produce_individual(subpopulation, j, state, thread)
+            j = self.microMutation.produce_individual(subpopulation, j, state, thread, no_clone=True)
         
         j.breedingPipe = self
 

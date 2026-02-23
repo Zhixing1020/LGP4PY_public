@@ -168,7 +168,7 @@ class LGPIndividual(GPIndividual):
 
         if self.eff_initialize:
             self.removeIneffectiveInstr()
-            trial = 100 * self.initMaxNumTrees
+            trial = 10 * self.initMaxNumTrees
             while self.countStatus() < numtrees and trial > 0:
                 tree = self.species.instr_prototype.lightClone()
                 # tree = state.parameters.getInstanceForParameter(
