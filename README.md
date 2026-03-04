@@ -7,6 +7,9 @@ This project implements linear genetic programming algorithms in Python. The mai
 * This is a package for fast deployment of Linear Genetic Programming (LGP) and its collaboration with Python-based machine learning packages, written by Zhixing Huang.
 * Version 1.0.0
 * Python 3.12
+* numpy
+* scikit-learn
+* pyinstrument
 
 ### How do I get set up? ###
 
