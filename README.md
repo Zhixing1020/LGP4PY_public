@@ -9,7 +9,7 @@ This project implements linear genetic programming algorithms in Python. The mai
 * Python 3.12
 * numpy
 * scikit-learn
-* pyinstrument
+* pyinstrument (not necessary for running experiments, but for running time analysis)
 
 ### How do I get set up? ###
 
