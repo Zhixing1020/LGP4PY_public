@@ -366,7 +366,8 @@ class LispParser4SR:
             source_file = os.path.join(source_path, f"job.{run}.out.stat")
             out_file = os.path.join(source_path, f"job.{run}.bestrule.dot")
             
-            expressions = ResultFileReader4LGPSRMT.readLispExpressionFromFile4LGP(
+            from tasks.symbreg.ruleanalysis.result_file_reader4lgp_sr import ResultFileReader4LGPSR
+            expressions = ResultFileReader4LGPSR.readLispExpressionFromFile4LGP(
                 source_file, num_regs, max_iterations, False, output_regs)
             
             best_expression = expressions[-1]

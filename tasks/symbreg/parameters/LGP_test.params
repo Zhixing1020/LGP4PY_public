@@ -8,6 +8,7 @@ evalthreads = 1
 breedthreads = 1
 jobs = 1
 seed.0 = 4
+seed.1 = 5
 # checkpoint = false
 # checkpoint-modulo = 1
 # checkpoint-prefix = ec
@@ -71,8 +72,10 @@ pop.subpop.0.species.ind.output-register.5 = 5
 pop.subpop.0.species.ind.output-register.6 = 6
 pop.subpop.0.species.ind.output-register.7 = 7
 
-pop.subpop.0.species.ind.to-wrap = false
+pop.subpop.0.species.ind.to-wrap = true
 pop.subpop.0.species.ind.batch-size=100
+pop.subpop.0.species.ind.batch-rate=0.1
+pop.subpop.0.species.ind.wrap_max_sample=2500
 
 #LGP specific parameters
 #numregisters = 4
@@ -330,6 +333,7 @@ gp.fs.0.func.10.nc = nc1
 
 eval.problem= tasks.symbreg.optimization.gp_symbolic_regression.GPSymbolicRegression
 eval.problem.data=src.ec.GPData
+eval.problem.vectorize_input = true
 
 SymbolicRegression.location = D:\\data\\study\\LGP4PY\\LGP4PY\\tasks\\symbreg\\dataset\\
 eval.problem.dataname = Nguyen4

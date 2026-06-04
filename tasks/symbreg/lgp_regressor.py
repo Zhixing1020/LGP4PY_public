@@ -12,9 +12,13 @@ import time
 
 class LinearGP_Regressor(LGP_Model_Template):
 
-    def __init__(self, param_file:str, seed:int=7, setup_problem_script=False,
+    def __init__(self, param_file:str, seed:int=4, setup_problem_script=False,
                  output_file1:str=None,
-                 output_file2:str=None):
+                 output_file2:str=None,
+                 dsl_output_path:str=None,
+                 module_path:str=None,
+                 output_file3:str=None,
+                 output_file4:str=None):
         '''
         when the output_file1 & 2 are none, the output file paths will follow the parameter file settings.
         '''
@@ -25,7 +29,11 @@ class LinearGP_Regressor(LGP_Model_Template):
 
         super().__init__(param_file, seed, setup_problem_script=setup_problem_script,
                          output_file1=output_file1,
-                         output_file2=output_file2)
+                         output_file2=output_file2,
+                         dsl_output_path=dsl_output_path,
+                         module_path=module_path,
+                         output_file3=output_file3,
+                         output_file4=output_file4)
 
     def fit(self, X, y):
         """
@@ -42,7 +50,7 @@ class LinearGP_Regressor(LGP_Model_Template):
         self.state.startFresh()
 
         if isinstance(self.state.evaluator.p_problem, GPSymbolicRegression):
-            self.state.evaluator.p_problem.setData(X, y)
+            self.state.evaluator.p_problem.setData(X, y, self.state)
         else:
             raise ValueError(f"the optimization of LinearGP_Regressor must be type of {GPSymbolicRegression.__name__}")
     
@@ -124,6 +132,8 @@ class LinearGP_Regressor(LGP_Model_Template):
         if not self.output_ind:
             print("the linear genetic programming has not been trained. I found no output individual")
             sys.exit(1)
+
+        self.output_ind.evaluated = False
 
         self.state.evaluator.p_problem.simpleevaluate(self.output_ind)
         self.test_fitness = self.output_ind.fitness.fitness()

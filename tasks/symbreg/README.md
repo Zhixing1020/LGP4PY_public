@@ -22,7 +22,7 @@ This folder applies LGP to solve symbolic regression problems.
 
 *  `lgp_regressor.py` wraps the LGP training process as a single model based on the LGP template.
 
-*  `lgp4SR_main.py` implements the main function, inherited from `MainRunner`
+*  `lgp4SR_main.py` implements the main function, inherited from `MainRunner`.
 
 
 ### Running Examples ###
@@ -62,7 +62,7 @@ This folder applies LGP to solve symbolic regression problems.
      }
  }
 ```
-   
+5. Run the configuration "run lgp4SR by main and params" in VSCode.   
 6. Finally, you will get three result files (if you only run one time with a random seed 7) `job.0.out. stat`, `job.0.outtabular.stat`, and `Nguyen4_7.json` in the project home directory (i.e., specified by the two `"${workspaceFolder}/",` respectively). `job.0.out.stat` and `job.0.outtabular.stat` are logging files, and `Nguyen4_7.json` is the result file.
 The format of `outtabular.stat` is
 ``[Generation index] [Population mean fitness]\t[Best fitness per generation]\t[Best fitness so far]\t[Population mean absolutate program length]\t[Population mean effective program length]\t[Population average effective rate]\t[Absolute program length of the best individual]\t[Effective program length of the best individual]\t[Effective rate of the best individual]\t[running time so far in seconds]``.

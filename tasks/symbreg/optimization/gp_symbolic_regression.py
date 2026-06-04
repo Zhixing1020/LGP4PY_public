@@ -5,7 +5,7 @@
 import os
 import math
 import numpy as np
-from typing import List
+from typing import List, override
 
 from src.ec import *
 from src.ec.util import Parameter,ParameterDatabase
@@ -27,6 +27,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
     TARGETNUM_P = "target_num"
     TARGETS_P = "targets"
     VALIDATION_P = "do-validation"
+    VECTORIZE_INPUTS_P = "vectorize_input"
 
     def __init__(self, loca:str=None, datan:str=None, fitn:str=None, istraining:bool=None, parameters:ParameterDatabase=None):
 
@@ -52,10 +53,13 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
 
         self.datanum = 0
         self.validatenum = 0
+        self.batchsize = 500 # the default batch size for training, this can be overridden by parameters or by the individual's batch size
 
         self.data = []
         self.data_output = []
         self.normdata = []
+
+        self.pick_indices = []
 
         self.norm_mean = []
         self.norm_std = []
@@ -69,6 +73,8 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
 
         self.X = []
         self.X_index = 0
+
+        self.vectorize:bool=True
 
         base = Parameter('eval.problem')
         default = Parameter(self.PROBLEM_P)
@@ -93,6 +99,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         self.normalized = parameters.getBoolean(base.push(self.NORMALIZE_P), default.push(self.NORMALIZE_P))
         self.doValidation = parameters.getBoolean(self.VALIDATION_P, False)
 
+        self.vectorize = parameters.getBoolean(base.push(self.VECTORIZE_INPUTS_P), default.push(self.VECTORIZE_INPUTS_P), default_val=True)
         
         self.setProblem(None, loca, datan, fitn, istraining)
 
@@ -107,6 +114,8 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         self.fitness = state.parameters.getString(base.push(self.FITNESS_P), def_param.push(self.FITNESS_P))
         self.normalized = state.parameters.getBoolean(base.push(self.NORMALIZE_P), def_param.push(self.NORMALIZE_P))
         self.doValidation = state.parameters.getBoolean(base.push(self.VALIDATION_P), def_param.push(self.NORMALIZE_P))
+
+        self.vectorize = state.parameters.getBoolean(base.push(self.VECTORIZE_INPUTS_P), def_param.push(self.VECTORIZE_INPUTS_P), default_val=True)
 
         self.foldindex = state.parameters.getIntWithDefault(base.push(self.KFOLDINDEX_P), def_param.push(self.KFOLDINDEX_P), 0)
         self.foldnum = state.parameters.getIntWithDefault(base.push(self.KFOLDNUM_P), def_param.push(self.KFOLDNUM_P), 1)
@@ -202,6 +211,16 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
 
         if self.istraining and state is not None and self.doValidation:
             self.split_validation(state)
+
+    def setData(self, X, y, state):
+        super().setData(X, y)
+
+        if self.normalized:
+            self.normalizedataBasedTraining()
+
+        if self.istraining and state is not None and self.doValidation:
+            self.split_validation(state)
+
     
     def read_X_file(self, filepath):
         with open(filepath, 'r') as f:
@@ -214,7 +233,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         self.data_min = [1e7] * self.datadim
 
         for line in lines[1:self.datanum+1]:
-            instance = list(map(float, line.strip().split()))
+            instance = tuple(map(float, line.strip().split()))
             for i in range(self.datadim):
                 self.data_max[i] = max(self.data_max[i], instance[i])
                 self.data_min[i] = min(self.data_min[i], instance[i])
@@ -352,6 +371,31 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         self.setProblem(None, self.location, self.dataname, self.fitness, istraining)
     def getFoldNum(self): return self.foldnum
 
+    def setX(self, X:np.ndarray):
+
+        SupervisedProblem.setX(self, X)
+
+    @override
+    def rotate_problem(self, state: EvolutionState, threadnum: int):
+        """
+        Randomly pick self.batchsize indices from the training data.
+        Stores the selected indices in self.pick_indices.
+        """
+        if state.generation <= 0.9 * state.numGenerations:
+            self.batchsize = max(state.population.subpops[0].species.i_prototype.batchsize, \
+                                 state.population.subpops[0].species.i_prototype.batchrate * self.datanum)
+        else:
+            self.batchsize = self.datanum  # Use all data in the last 10% generations
+
+        if self.batchsize >= self.datanum:
+            # If batchsize is not set or greater than data size, use all data
+            self.pick_indices = range(self.datanum)
+        else:
+            # Randomly pick batchsize indices without replacement using Python's Random
+            self.pick_indices = state.random[threadnum].sample(range(self.datanum), int(self.batchsize))
+
+
+
     def evaluate(self, state:EvolutionState, ind:LGPIndividual4SR, subpopulation:int, threadnum:int):
         if not ind.evaluated:
             if self.data is None or self.data_output is None:
@@ -360,26 +404,34 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
             # hits = 0
             result = 0
             normwrap = 0
-            real = self.data_output
-
-            # predict = []
-            # for y in range(self.datanum):
-            #     tmp = GPData()
-            #     self.X = [self.normdata[y][d] if self.normalized else self.data[y][d] for d in range(self.datadim)]
-            #     self.X_index = y
-                
-            #     ind.setDataIndex(y)
-            #     pred = ind.execute(state, threadnum, tmp, ind, self, False)
-            #     predict.append(pred)
+            real = self.data_output[self.pick_indices]
 
             tmp = GPData()
-            tmp.to_vectorize = True
-            tmp.values = np.zeros((self.datanum, 1))
-            self.X = self.normdata if self.normalized else self.data
-            ind.preExecution(state, threadnum)
-            predict = ind.execute(state, threadnum, tmp, ind, self, False)
-            
-            predict = np.concatenate(predict, axis=1)
+            tmp.to_vectorize = self.vectorize
+
+            if not self.vectorize:
+                predict = []
+                ind.preExecution(state, threadnum)
+                # for y in range(self.datanum):
+                for y in self.pick_indices:
+                    tmp = GPData()
+                    # self.X = tuple(self.normdata[y][d] if self.normalized else self.data[y][d] for d in range(self.datadim))
+                    # self.X = tuple(self.normdata[y] if self.normalized else self.data[y])
+                    self.X = tuple(self.normdata[y]) if self.normalized else tuple(self.data[y])
+                    self.X_index = y
+                    
+                    ind.setDataIndex(y)
+                    
+                    pred = ind.execute(state, threadnum, tmp, ind, self, False)
+                    predict.append(pred)
+
+            else:
+                tmp.values = np.zeros((len(self.pick_indices), 1))
+                self.X = self.normdata[self.pick_indices] if self.normalized else self.data[self.pick_indices]
+                ind.preExecution(state, threadnum)
+                predict = ind.execute(state, threadnum, tmp, ind, self, False)
+                
+                predict = np.concatenate(predict, axis=1)
 
             #convert "predict" as a list of 2d ndarray
             if isinstance(predict, list) and isinstance(predict[0], list):
@@ -397,7 +449,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
                 real_care = real[:, indices]
 
                 predict = ind.wrapper(predict, real_care, state, threadnum, self)
-                # normwrap = ind.getWeightNorm()
+                normwrap = ind.getWrapNorm(predict, real_care, state, threadnum, self)
 
             for od in range(self.target_num):
                 real_d = real[:, self.targets[od]] # convert the 2D array into 1D
@@ -419,7 +471,7 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
                     raise ValueError("unknown fitness objective " + self.fitness)
 
             validate_res = self.validationevaluation(state, ind, subpopulation, threadnum)
-            fitness_val = result + normwrap + 0.1 * validate_res
+            fitness_val = result + 0.01 * normwrap + 0.1 * validate_res
             # f = ind.fitness
             ind.fitness.setFitness(state, fitness_val)
             ind.evaluated = True
@@ -437,13 +489,29 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         #     predict.append(pred)
 
         tmp = GPData()
-        tmp.to_vectorize = True
-        tmp.values = np.zeros((self.datanum, 1))
-        self.X = self.validate_data
-        # ind.preExecution(state, threadnum)
-        predict = ind.execute(state, threadnum, tmp, ind, self, False)
-        
-        predict = np.concatenate(predict, axis=1)
+        tmp.to_vectorize = self.vectorize
+
+        if not self.vectorize:
+            predict = []
+            ind.preExecution(state, threadnum)
+            for y in range(self.validatenum):
+                tmp = GPData()
+                # self.X = tuple(self.normdata[y][d] if self.normalized else self.validate_data[y][d] for d in range(self.datadim))
+                self.X = tuple(self.normdata[y] if self.normalized else self.validate_data[y])
+                self.X_index = y
+                
+                ind.setDataIndex(y)
+                
+                pred = ind.execute(state, threadnum, tmp, ind, self, ind.IsWrap())
+                predict.append(pred)
+
+        else:
+            tmp.values = np.zeros((self.validatenum, 1))
+            self.X = self.validate_data
+            ind.preExecution(state, threadnum)
+            predict = ind.execute(state, threadnum, tmp, ind, self, ind.IsWrap())
+            
+            predict = np.concatenate(predict, axis=1)
 
         #convert "predict" as a list of 2d ndarray
         if isinstance(predict, list) and isinstance(predict[0], list):
@@ -489,13 +557,29 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
             #     predict.append(pred)
 
             tmp = GPData()
-            tmp.to_vectorize = True
-            tmp.values = np.zeros((self.datanum, 1))
-            self.X = self.normdata if self.normalized else self.data
-            # ind.preExecution(None, 0)
-            predict = ind.execute(None, 0, tmp, ind, self, False)
-            
-            predict = np.concatenate(predict, axis=1)
+            tmp.to_vectorize = self.vectorize
+
+            if not self.vectorize:
+                predict = []
+                ind.preExecution(None, 0)
+                for y in range(self.datanum):
+                    tmp = GPData()
+                    # self.X = tuple(self.normdata[y][d] if self.normalized else self.data[y][d] for d in range(self.datadim))
+                    self.X = tuple(self.normdata[y] if self.normalized else self.data[y])
+                    self.X_index = y
+                    
+                    ind.setDataIndex(y)
+                    
+                    pred = ind.execute(None, 0, tmp, ind, self, ind.IsWrap())
+                    predict.append(pred)
+
+            else:
+                tmp.values = np.zeros((self.datanum, 1))
+                self.X = self.normdata if self.normalized else self.data
+                ind.preExecution(None, 0)
+                predict = ind.execute(None, 0, tmp, ind, self, ind.IsWrap())
+                
+                predict = np.concatenate(predict, axis=1)
 
             #convert "predict" as a list of 2d ndarray
             if isinstance(predict, list) and isinstance(predict[0], list):
@@ -547,13 +631,29 @@ class GPSymbolicRegression(Problem, SupervisedProblem):
         #     predict.append(pred)
 
         tmp = GPData()
-        tmp.to_vectorize = True
-        tmp.values = np.zeros((self.datanum, 1))
-        self.X = self.normdata if self.normalized else self.data
-        # ind.preExecution(None, 0)
-        predict = ind.execute(None, 0, tmp, ind, self, True)
-        
-        predict = np.concatenate(predict, axis=1)
+        tmp.to_vectorize = self.vectorize
+
+        if not self.vectorize:
+            predict = []
+            ind.preExecution(None, 0)
+            for y in range(self.datanum):
+                tmp = GPData()
+                #self.X = tuple(self.normdata[y][d] if self.normalized else self.data[y][d] for d in range(self.datadim))
+                self.X = tuple(self.normdata[y] if self.normalized else self.data[y])
+                self.X_index = y
+                
+                ind.setDataIndex(y)
+                
+                pred = ind.execute(None, 0, tmp, ind, self, ind.IsWrap())
+                predict.append(pred)
+
+        else:
+            tmp.values = np.zeros((self.datanum, 1))
+            self.X = self.normdata if self.normalized else self.data
+            ind.preExecution(None, 0)
+            predict = ind.execute(None, 0, tmp, ind, self, ind.IsWrap())
+            
+            predict = np.concatenate(predict, axis=1)
 
         #convert "predict" as a list of 2d ndarray
         if isinstance(predict, list) and isinstance(predict[0], list):
