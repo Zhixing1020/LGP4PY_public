@@ -19,6 +19,8 @@ class GPIndividual(ABC):
     
     P_TOWRAP = "to-wrap"
     P_BATCHSIZE = "batch-size"
+    P_BATCHRATE = "batch-rate"
+    P_MAX_WRAP_SAMPLE = "wrap_max_sample"
 
     def __init__(self):
         self.treelist:list[GPTree] = []*1  # storing all the tree in this individual
@@ -29,6 +31,8 @@ class GPIndividual(ABC):
         
         self.towrap = False  # to wrap the output or not
         self.batchsize = 1   # the batch size in training
+        self.batchrate = 0.1 # the batch rate of training data
+        self.wrap_max_sample = 1000   # the maximum number of samples to be used for wrapping
 
 
     @classmethod
@@ -100,6 +104,8 @@ class GPIndividual(ABC):
         myobj.treelist = [tree.clone() for tree in self.treelist]
         myobj.towrap = self.towrap
         myobj.batchsize = self.batchsize
+        myobj.batchrate = self.batchrate
+        myobj.wrap_max_sample = self.wrap_max_sample
         myobj.breedingPipe = self.breedingPipe 
         for tree in myobj.treelist:
             tree.owner = myobj
@@ -112,6 +118,8 @@ class GPIndividual(ABC):
         myobj.treelist = [tree.lightClone() for tree in self.treelist]
         myobj.towrap = self.towrap
         myobj.batchsize = self.batchsize
+        myobj.batchrate = self.batchrate
+        myobj.wrap_max_sample = self.wrap_max_sample
         myobj.breedingPipe = self.breedingPipe
         for tree in myobj.treelist:
             tree.owner = myobj

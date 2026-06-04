@@ -2,7 +2,7 @@ import sys
 from src.ec.util.log import Log, LogRestarter
 from pathlib import Path
 from typing import Optional, TextIO, Union, Any
-from io import TextIOWrapper
+# from io import TextIOWrapper
 import warnings
 from dataclasses import dataclass
 

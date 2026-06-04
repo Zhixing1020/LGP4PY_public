@@ -4,6 +4,7 @@ from src.ec.util.parameter import Parameter
 from src.ec.util.output import Output
 
 from random import Random
+import copy
 
 class EvolutionState:
 
@@ -218,6 +219,8 @@ class EvolutionState:
         if self.generation > 0:
             self.output.message(f"Generation {self.generation}")
 
+        self.evaluator.p_problem.rotate_problem(self, 0)
+
         # EVALUATION
         self.statistics.preEvaluationStatistics(self)
         self.evaluator.evaluatePopulation(self)
@@ -276,6 +279,50 @@ class EvolutionState:
         #     self.statistics.postCheckpointStatistics(self)
 
         return self.R_NOTDONE
+
+    def lightClone_w_pickable(self):
+        """Create a shallow picklable clone of this EvolutionState.
+
+        Non-picklable runtime handles such as output logs are replaced with
+        new, empty picklable objects. Random generators are copied by state so
+        each clone maintains the same pseudo-random stream without sharing the
+        same Random instance.
+        """
+        new_state = copy.copy(self)
+
+        # Abandon runtime-only objects that may hold unpicklable handles
+        new_state.output = None
+
+        # Duplicate random generators in a picklable way
+        if self.random is None:
+            new_state.random = None
+        else:
+            new_state.random = [None] * len(self.random)
+            for idx, rng in enumerate(self.random):
+                if rng is None:
+                    new_state.random[idx] = None
+                else:
+                    clone_rng = Random()
+                    clone_rng.setstate(rng.getstate())
+                    new_state.random[idx] = clone_rng
+
+        # Preserve the execution state and algorithm objects; these are typically
+        # picklable and should be shared in light clones.
+        new_state.population = self.population.lightClone_w_pickable()
+        new_state.evaluator = self.evaluator
+        new_state.breeder = self.breeder
+        new_state.statistics = self.statistics
+        new_state.builder = self.builder
+        new_state.primitive_sets = self.primitive_sets
+
+        # The previous best individual is typically picklable if the individual is.
+        new_state.previous_best_ind = self.previous_best_ind
+
+        # Shallow-copy any metadata lists so clones do not share mutable list objects.
+        new_state.job = list(self.job) if self.job is not None else None
+        new_state.runtimeArguments = list(self.runtimeArguments) if self.runtimeArguments is not None else None
+
+        return new_state
 
     def run(self):
         

@@ -92,3 +92,14 @@ class Subpopulation:
             subp.duplicateSet = set()
             subp.duplicateSet.update(self.duplicateSet)
         return subp
+    
+    def lightClone_w_pickable(self)->'Subpopulation':
+        subp = self.__class__()
+        subp.species = self.species
+        subp.numDuplicateRetries = self.numDuplicateRetries
+        subp.individuals = self.individuals # shallow clone
+        subp.duplicateSet = self.duplicateSet
+        if self.numDuplicateRetries >= 1:
+            subp.duplicateSet = set()
+            subp.duplicateSet.update(self.duplicateSet)
+        return subp

@@ -1,8 +1,7 @@
-
 from tasks.problem import Problem
 from src.ec import EvolutionState
 from src.ec.util import Parameter, ParameterDatabase
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import copy
 
 class Evaluator:
@@ -74,31 +73,35 @@ class Evaluator:
             prob = copy.deepcopy(self.p_problem) if self.cloneProblem else self.p_problem
             self.evalPopChunk(state, numinds, from_index, 0, prob)
         else:
-            with ThreadPoolExecutor(max_workers=state.evalthreads) as executor:
+            with ProcessPoolExecutor(max_workers=state.evalthreads) as executor:
+            # with ThreadPoolExecutor(max_workers=state.evalthreads) as executor:
                 futures = []
                 for i in range(state.evalthreads):
+                    new_state = state.lightClone_w_pickable()
                     prob = copy.deepcopy(self.p_problem) if self.cloneProblem else self.p_problem
                     futures.append(
-                        executor.submit(self.evalPopChunk, state, numinds, from_index, i, prob)
+                        executor.submit(self.evalPopChunk, new_state, numinds, from_index, i, prob)
                     )
                 for future in futures:
-                    future.result()  # Wait for completion
+                    results = future.result()  # Wait for completion
+                    for pop_idx, ind_idx, ind in results:
+                        state.population.subpops[pop_idx].individuals[ind_idx] = ind
 
         # if self.numTests > 1:
         #     self.contract(state)
 
     def evalPopChunk(self, state:EvolutionState, numinds, from_index, threadnum, problem:Problem):
-        # problem.prepare_to_evaluate(state, threadnum)
-
+        results = []
         for pop_index, subpop in enumerate(state.population.subpops):
-            fp = from_index[pop_index]
-            upperbound = fp + numinds[pop_index]
-            individuals = subpop.individuals[fp:upperbound]
-
-            for ind in individuals:
+            n = len(subpop.individuals)
+            chunk_size = (n + state.evalthreads - 1) // state.evalthreads
+            start = threadnum * chunk_size
+            end = min(start + chunk_size, n)
+            for idx, ind in enumerate(subpop.individuals[start:end]):
                 problem.evaluate(state, ind, pop_index, threadnum)
+                results.append((pop_index, start + idx, ind))
 
-        # problem.finish_evaluating(state, threadnum)
+        return results
 
     # def expand(self, state):
     #     pass  # stub for numTests > 1 case

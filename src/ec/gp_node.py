@@ -427,22 +427,26 @@ class GPNode(GPNodeParent):
     #     for child in self.children:
     #         child.collectReadRegister(s)
     def collectReadRegister(self, s: set[int]):
-        from src.lgp.individual.primitive import ReadRegisterGPNode
-        from src.lgp.algorithm.typed_lgp.individual.primitives.typed_feature import TypedFeature
+        # from src.lgp.individual.primitive import ReadRegisterGPNode
+        # from src.lgp.algorithm.typed_lgp.individual.primitives.typed_feature import TypedFeature
 
-        stack = [self]
+        # stack = [self]
 
-        while stack:
-            node = stack.pop()
+        # while stack:
+        #     node = stack.pop()
 
-            # Inline checks
-            if isinstance(node, ReadRegisterGPNode):
-                s.add(node.index)   # direct attribute if possible
+        #     node.collectReadRegister(s)
+        #     # # Inline checks
+        #     # if isinstance(node, ReadRegisterGPNode):
+        #     #     s.add(node.index)   # direct attribute if possible
 
-            elif isinstance(node, TypedFeature):
-                arg = node.input_arg
-                if isinstance(arg, ReadRegisterGPNode):
-                    s.add(arg.index)
+        #     # elif isinstance(node, TypedFeature):
+        #     #     arg = node.input_arg
+        #     #     if isinstance(arg, ReadRegisterGPNode):
+        #     #         s.add(arg.index)
 
-            # Extend stack
-            stack.extend(node.children)
+        #     # Extend stack
+        #     stack.extend(node.children)
+
+        for child in self.children:
+            child.collectReadRegister(s)

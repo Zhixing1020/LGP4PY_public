@@ -49,3 +49,12 @@ class Population:
             pop.subpops[i] = p.emptyclone()
         
         return pop
+    
+    def lightClone_w_pickable(self)->'Population':
+        pop = self.__class__()
+        pop.subpops = [None] * len(self.subpops)
+
+        for i, p in enumerate(self.subpops):
+            pop.subpops[i] = p.lightClone_w_pickable()
+        
+        return pop
