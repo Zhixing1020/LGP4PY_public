@@ -69,7 +69,7 @@ This package defines the problem-specific algorithm implementation.
 
 ### How to apply LGP to your own applications ###
 
-For example, you have an application of "Application1". Then you can extend a basic LGP to this application by the following steps:
+For example, you have an application of "Application1". Then you can extend a basic LGP to this application by following these steps:
 
 1. Set up an independent folder "Application1" in the `tasks` folder.
 2. Set up folders of `individual`, `optimization`, `parameters`. Other folders like `ec`, `ruleanalysis`, `algorithm`, `DSL` and `util`, are required if you want to have more application-specific designs in LGP.
