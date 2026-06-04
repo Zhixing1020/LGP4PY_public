@@ -4,7 +4,8 @@ from src.lgp.individual.reproduce.tournament_selection import TournamentSelectio
 
 class AnealingTournamentSelection(TournamentSelection):
 
-    def produce(self, subpopulation:int, state:EvolutionState, thread:int):
+    def produce_select(self, subpopulation:int, state:EvolutionState, thread:int):
+         
         # pick size random individuals, then pick the best.
         oldinds = state.population.subpops[subpopulation].individuals
         

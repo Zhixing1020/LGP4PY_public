@@ -101,7 +101,7 @@ class LGPNeutralMutationPipeline(MutationPipeline):
             tree.child.argposition = 0
             j.setTree(x, tree, update_status=False)
         
-        j.updateStatus()
+        # j.updateStatus()
         
         # Perform mutations
         pickNum = state.random[thread].randint(0, self.stepSize-1) + 1.0

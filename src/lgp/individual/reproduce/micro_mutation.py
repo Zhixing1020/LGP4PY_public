@@ -216,7 +216,7 @@ class LGPMicroMutationPipeline(MutationPipeline):
             
             if res:  # we've got a valid mutation
                 x = t
-                tree = j.getTree(x)
+                # tree = j.getTree(x)
                 tree = parent.getTree(x).clone()
                 tree.owner = j
                 tree.child = parent.getTree(x).child.cloneReplacingNoSubclone(p2, p1)

@@ -6,6 +6,7 @@ from tasks.problem import Problem
 
 from typing import Set, List
 # from copy import deepcopy
+import re
 
 class GPTreeStruct(GPTree):
     """define the class of LGP instructions"""
@@ -20,6 +21,7 @@ class GPTreeStruct(GPTree):
         super().__init__()
         self.status: bool = False  # False: non-effective, True: effective
         self.effRegisters: Set[int] = set()
+        # self.srcRegisters: Set[int] = set()
         self.type: int = GPTreeStruct.ARITHMETIC  # default: ARITHMETIC
 
     def __repr__(self):
@@ -56,11 +58,17 @@ class GPTreeStruct(GPTree):
         t.status = self.status
         t.type = self.type
         t.effRegisters = set(self.effRegisters)
+        # t.srcRegisters = set(self.srcRegisters)
         return t
 
     def assignfrom(self, tree: 'GPTree'):
         self.child = tree.child
         self.owner = tree.owner
+
+    def str_wo_registers(self):
+        # Generate string representation without register details
+        s = str(self)
+        return re.sub(r"R\d+", "_", s)
 
     # def flatten_postorder(self, state:EvolutionState, thread:int) -> list[GPNode]:
     #     """

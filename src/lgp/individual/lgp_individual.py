@@ -46,6 +46,7 @@ class LGPIndividual(GPIndividual):
         self.outputRegister = []
         self.fastFlag = False
         self.exec_trees:list[GPTreeStruct] = []
+        self.to_reset_register_set:set[int] = set()
         self.preevaluated = False
 
         # self.tmp_numOutputRegs = 0
@@ -64,11 +65,20 @@ class LGPIndividual(GPIndividual):
         # wrapper
         self.towrap = state.parameters.getBoolean(base.push(self.P_TOWRAP), def_base.push(self.P_TOWRAP), False)
         self.wraplist = []
-        self.batchsize = state.parameters.getInt(base.push(self.P_BATCHSIZE), def_base.push(self.P_BATCHSIZE))
+        self.batchsize = state.parameters.getIntWithDefault(base.push(self.P_BATCHSIZE), def_base.push(self.P_BATCHSIZE), 1000)
         if self.batchsize < 1:
-            state.output.fatal("The wrap_max_sample must be larger than 1.",
+            state.output.fatal("The batchsize must be larger than 1.",
                             base.push(self.P_BATCHSIZE), def_base.push(self.P_BATCHSIZE))
+        
+        self.batchrate = state.parameters.getDoubleWithDefault(base.push(self.P_BATCHRATE), def_base.push(self.P_BATCHRATE), 0.1)
+        if self.batchrate > 1 or self.batchrate <= 0:
+            state.output.fatal("The batchrate must be larger than 0 and not larger than 1.",
+                            base.push(self.P_BATCHRATE), def_base.push(self.P_BATCHRATE))
 
+        self.wrap_max_sample = state.parameters.getIntWithDefault(base.push(self.P_MAX_WRAP_SAMPLE), def_base.push(self.P_MAX_WRAP_SAMPLE), 1000)
+        if self.wrap_max_sample < 1:
+            state.output.fatal("The wrap_max_sample must be larger than 1.",
+                            base.push(self.P_MAX_WRAP_SAMPLE), def_base.push(self.P_MAX_WRAP_SAMPLE))
         # self.float_numOutputRegs = state.parameters.getBoolean(base.push(self.P_FLOATOUTPUT), def_base.push(self.P_FLOATOUTPUT), False)
         # self.normalize_wrap = state.parameters.getBoolean(base.push(self.P_NORMWRAP), def_base.push(self.P_NORMWRAP), False)
         # self.normalize_f = state.parameters.getDoubleWithDefault(base.push(self.P_NORMWRAP_F), def_base.push(self.P_NORMWRAP_F), 1e-3)
@@ -122,6 +132,7 @@ class LGPIndividual(GPIndividual):
 
         self.treelist = []
         self.exec_trees = []
+        self.to_reset_register_set = set()
 
         for x in range(self.MaxNumTrees):
             p = base.push(self.P_TREE).push("0")
@@ -184,7 +195,7 @@ class LGPIndividual(GPIndividual):
 
     @override
     def execute(self, state:EvolutionState, thread:int, input:GPData, individual, 
-                problem:Problem, with_warp:bool = False):
+                problem:Problem, with_wrap:bool = False):
         # check if the individual is evaluated
         # if self.evaluated:
         #     return  [ self.getRegistersIndex(r) for r in self.getOutputRegisters()] 
@@ -212,7 +223,7 @@ class LGPIndividual(GPIndividual):
                 tree.child.eval(state, thread, input, individual, problem)
                 # tree.postorder_execution(state, thread, input, individual, problem)
 
-        if self.IsWrap() and with_warp:
+        if self.IsWrap() and with_wrap:
             # if the individual is wrapped, we need to execute the wrapper
             for instr in self.wraplist:
                 instr.child.eval(state, thread, input, individual, problem)
@@ -228,6 +239,11 @@ class LGPIndividual(GPIndividual):
             if tree.status:
                 # tree.flatten_postorder(state, thread)
                 self.exec_trees.append(tree)
+                
+        self.to_reset_register_set.clear()
+        self.to_reset_register_set.update(self.outputRegister)
+        for _, tree in enumerate(self.exec_trees):
+            tree.child.collectReadRegister(self.to_reset_register_set)
 
         # set the fastFlag to 1 if the individual is fast executable (i.e., no flow control)
         self.fastFlag = all(tree.type == GPTreeStruct.ARITHMETIC for tree in self.exec_trees)
@@ -366,9 +382,12 @@ class LGPIndividual(GPIndividual):
         self.initMinNumTrees = obj.getInitMinNumTrees()
         self.numOutputRegs = obj.getNumOutputRegs()
         self.outputRegister = obj.getOutputRegisters().copy()
+        self.to_reset_register_set = obj.to_reset_register_set.copy()
         self.numOutputRegs = obj.getNumOutputRegs()
         self.towrap = obj.towrap
         self.batchsize = obj.batchsize
+        self.batchrate = obj.batchrate
+        self.wrap_max_sample = obj.wrap_max_sample
         self.eff_initialize = obj.eff_initialize
         self.setRegisters(obj.getRegisters())
         self.species = obj.species
@@ -491,7 +510,7 @@ class LGPIndividual(GPIndividual):
         self.updateStatus()
         return sum(
             tree.child.numNodes(GPNode.NODESEARCH_ALL) -
-            tree.child.numNodes(GPNode.NODESEARCH_READREG) - 1
+            tree.child.numNodes(GPNode.NODESEARCH_READREG)
             for tree in self.getTreelist() if tree.status
         )
     
@@ -529,9 +548,9 @@ class LGPIndividual(GPIndividual):
             exit(1)
 
         self.preevaluated = False
-        statusArray = [False] * len(self.getTreelist())
-        sourceArray = [[False] * self.getNumRegs() for _ in self.getTreelist()]
-        destinationArray = [[False] * self.getNumRegs() for _ in self.getTreelist()]
+        # statusArray = [False] * len(self.getTreelist())
+        # sourceArray = [[False] * self.getNumRegs() for _ in self.getTreelist()]
+        # destinationArray = [[False] * self.getNumRegs() for _ in self.getTreelist()]
 
         targetRegister = set(tar)
 
@@ -637,14 +656,12 @@ class LGPIndividual(GPIndividual):
             tree.type = GPTreeStruct.ARITHMETIC
             index = tree.child.getIndex()
             if index in targetRegister:
-                tree.status = statusArray[idx] = True
+                tree.status = True
                 targetRegister.discard(index)
                 tree.updateEffRegister(targetRegister)
             else:
-                tree.status = statusArray[idx] = False
+                tree.status = False
 
-            destinationArray[idx][index] = True
-            self.collectReadRegister(tree.child, sourceArray[idx])
             idx -= 1
 
     def countStatus(self, start: int=0, end: int=None) -> int:
@@ -658,11 +675,17 @@ class LGPIndividual(GPIndividual):
     #     return cnt / len(self.getTreelist()) <= self.rateFlowOperator
 
     def collectReadRegister(self, node: GPNode, collect: List[bool]):
-        if isinstance(node, ReadRegisterGPNode):
-            collect[node.getIndex()] = True
-        else:
-            for child in node.children:
-                self.collectReadRegister(child, collect)
+
+        index_set = set()
+        node.collectReadRegister(index_set)
+        for i in range(len(collect)):
+            collect[i] = i in index_set
+        # collect = [i in index_set for i in range(self.getNumRegs())]
+        # if isinstance(node, ReadRegisterGPNode):
+        #     collect[node.getIndex()] = True
+        # else:
+        #     for child in node.children:
+        #         self.collectReadRegister(child, collect)
 
     def makeGraphvizRule(self) -> str:
         return self.makeGraphvizRule(list(self.getOutputRegisters()))
@@ -673,47 +696,12 @@ class LGPIndividual(GPIndividual):
         #predict_array.shape = (N, F) where N = number of instances (samples) F = number of features
         #target_array.shape = (N, O) where O = number of outputs (targets)
 
-        MAX_SAMPLE = self.batchsize
+        pass
 
-        num_samples, num_features = predict_array.shape
-        num_outputs = target_array.shape[1]
-        sample_size = min(num_samples, MAX_SAMPLE)
+    def getWrapNorm(self, predict_array: np.ndarray, target_array: np.ndarray,
+                    state: EvolutionState, thread: int, problem: Problem) -> float:
 
-        # sample indices
-        if num_samples > MAX_SAMPLE:
-            indices = np.array([
-                state.random[thread].randint(0, num_samples - 1)
-                for _ in range(MAX_SAMPLE)
-            ])
-        else:
-            indices = np.arange(sample_size)
-
-        # sampled predictors and targets
-        predict = predict_array[indices, :]         # shape (sample_size, num_features)
-        self.wraplist.clear()
-
-        for tar in range(num_outputs):
-            # build target vector for this output
-            target = target_array[indices, tar]     # shape (sample_size,)
-
-            # fit linear regression
-            lr = Ridge(alpha=0.1)
-            lr.fit(predict, target)
-
-            # combine intercept + coefficients
-            W = np.concatenate(([lr.intercept_], lr.coef_))
-
-            # construct instruction
-            instr = self.constructInstr(self.outputRegister[tar], W)
-            self.wraplist.append(instr)
-
-            # update all predictions inplace
-            tmp = W[0] + predict_array @ W[1:]   # shape (num_samples,)
-            tmp = np.clip(tmp, -1e6, 1e6)
-            predict_array[:, tar] = tmp
-
-        # return updated predictions
-        return predict_array.copy()
+        return 0.0
 
 
     def getWrapper(self):

@@ -65,3 +65,19 @@ class ReadRegisterGPNode(GPNode):
         clone.setIndex(self.index)
         clone.setRange(self.range)
         return clone
+    
+    def collectReadRegister(self, s: set[int]):
+        # from src.lgp.individual.primitive import ReadRegisterGPNode
+        # from src.lgp.algorithm.typed_lgp.individual.primitives.typed_feature import TypedFeature
+
+        s.add(self.index) 
+
+        # stack = [self]
+
+        # while stack:
+        #     node = stack.pop()
+
+        #     s.add(node.index)   # direct attribute if possible
+
+        #     # Extend stack
+        #     stack.extend(node.children)

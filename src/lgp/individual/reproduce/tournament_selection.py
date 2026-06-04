@@ -54,6 +54,21 @@ class TournamentSelection(SelectionMethod):
     def betterThan(self, first:GPIndividual, second:GPIndividual, subpopulation, state, thread):
         return first.fitness.betterThan(second.fitness)
 
+    def produce(self, min: int, max: int, start: int, subpopulation: int,
+                inds: list, state: EvolutionState, thread: int)->int:
+        n = self.INDS_PRODUCED
+        if n < min:
+            n = min
+        if n > max:
+            n = max
+
+        for q in range(n):
+            pos = self.produce_select(subpopulation, state, thread)
+            inds[start + q] = state.population.subpops[subpopulation].individuals[pos]
+            inds[start + q].updateStatus()
+        
+        return n
+
     def produce_select(self, subpopulation, state, thread):
         oldinds = state.population.subpops[subpopulation].individuals
         best = self.getRandomIndividual(0, subpopulation, state, thread)
