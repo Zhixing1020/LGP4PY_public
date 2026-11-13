@@ -58,7 +58,7 @@ class GPPrimitiveSet:
                 step = state.parameters.getDoubleWithDefault(pp.push("step"), None, 0.1)
                 if lb > ub:
                     state.output.fatal("the range of constants does not make sense")
-                gpfi = ConstantGPNode(lb, ub, step)
+                gpfi = ConstantGPNode(begin=lb, end=ub, step=step)
                 gpfi.setup(state, pp)
 
             elif isinstance(gpfi, FlowOperator):

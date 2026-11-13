@@ -46,4 +46,4 @@ class Sqrt(GPNode):
         #     input.values = np.sqrt(np.abs(result))
 
     def __str__(self):
-        return "sqr"
+        return "sqrt"

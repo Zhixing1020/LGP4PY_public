@@ -1,0 +1,7 @@
+# Store text files with LF line endings
+* text=auto eol=lf
+
+# Skip line-ending handling for binary assets
+*.png binary
+*.jpg binary
+*.zip binary
