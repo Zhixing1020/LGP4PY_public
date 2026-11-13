@@ -15,7 +15,7 @@ class Subpopulation:
     def __init__(self):
         self.individuals:list[GPIndividual] = []
         self.numDuplicateRetries = 0
-        self.species = None
+        self.species:GPSpecies = None
         self.duplicateSet:Set[str] = None
 
     def defaultBase(self):
