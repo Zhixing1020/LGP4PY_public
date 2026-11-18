@@ -111,24 +111,16 @@ class ParameterDatabase:
         elif p.startswith(C_CLASS):
             return None  # Can't start with @
         else:
+            # just return the path simply no matter the file exists or not, the method just need to return the path as is
+            # what's more, make sure all parent dirtorys of the path exist
             path = Path(p)
-            if path.is_absolute():
-                return path
-            else:
-                # directoryFor would be a method that returns the base directory
-                base_dir = self.find_base_dir(path.parent, p) 
-                return (Path(base_dir) / p) if base_dir else None
+            path.parent.mkdir(parents=True, exist_ok=True)
+            return path
 
-    def find_base_dir(start_path: Path, file_name: str) -> Path:
-        """Search upward for a directory containing the marker file"""
-        for parent in start_path.parents:
-            if (parent / file_name).exists():
-                return parent
-        return start_path  # Fallback to original directory
 
 if __name__ == "__main__":
-    db = ParameterDatabase('D:\\zhixing\\科研\\LGP4PY\\LGP4PY\\tasks\\Symbreg\\parameters\\simpleLGP_SRMT.params')
-    param = Parameter.Parameter("stat").push("child").push("0")
+    db = ParameterDatabase(r'tasks\symbreg\parameters\simpleLGP_SRMT.params')
+    param = Parameter("stat").push("child").push("0")
     test = db.getParamValue(str(param))  # returns value
     print(test)
     print(db)

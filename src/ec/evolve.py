@@ -226,10 +226,13 @@ Format:
                     output.fatal(f"{Evolve.P_SEED}.{x} ({seed}) and {Evolve.P_SEED}.{y} ({seeds[y]}) ought not be the same seed.", None, None)
             
             seeds.append(seed)
+            parameters.params[f"{Evolve.P_SEED}.{x}"] = str(seed) # Store the real seed in the parameters
             rng = random.Random(seed)
             np.random.seed(seed)
             rng = Evolve.primeGenerator(rng)
             rngs.append(rng)
+
+        parameters.params["seeds"] = seeds # Store the real seeds in the parameters
 
         # Setup evolution state
         state.parameters = parameters
@@ -250,7 +253,7 @@ Format:
     #     pass  # Would implement actual cleanup
 
     @staticmethod
-    def main() -> None:
+    def main() -> None: # just the test code
         """Top-level evolutionary loop."""
         args = sys.argv[1:]
         

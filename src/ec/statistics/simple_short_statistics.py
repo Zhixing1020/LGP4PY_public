@@ -63,8 +63,7 @@ class SimpleShortStatistics(Statistics):
                 state.output.fatal("An IOException occurred while trying to create the log " + 
                                  str(statisticsFile) + ":\n" + str(i))
         else:
-            state.output.warning("No statistics file specified, printing to stdout at end.", 
-                              base.push(self.P_STATISTICS_FILE))
+            state.output.warning(f"No statistics file specified by {base.push(self.P_STATISTICS_FILE)}, printing to stdout at end.")
 
         self.doSize = state.parameters.getBoolean(base.push(self.P_DO_SIZE), None, False)
         self.doTime = state.parameters.getBoolean(base.push(self.P_DO_TIME), None, False)
