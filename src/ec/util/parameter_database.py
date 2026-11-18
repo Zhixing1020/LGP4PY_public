@@ -112,7 +112,7 @@ class ParameterDatabase:
             return None  # Can't start with @
         else:
             # just return the path simply no matter the file exists or not, the method just need to return the path as is
-            # what's more, make sure all parent dirtorys of the path exist
+            # what's more, make sure all parent directories of the path exist
             path = Path(p)
             path.parent.mkdir(parents=True, exist_ok=True)
             return path
